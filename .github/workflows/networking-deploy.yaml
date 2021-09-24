@@ -34,7 +34,7 @@ jobs:
         inlineScript: |
          az deployment sub $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
             --template-file "networking/resource-groups.json" \
-            --name resource-groups" \
+            --name "resource-groups" \
             --parameters  @networking/networking.dev.parameters.json
-            
+
         azcliversion: latest
