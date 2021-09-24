@@ -11,6 +11,9 @@ on:
       - 'networking/*'
       - '.github/workflows/networking-deploy.yaml'
     branches: [ main ]
+
+env:
+  DEFAULT_LOCATION: westeurope
         
 jobs:
   deploy:
@@ -35,6 +38,7 @@ jobs:
          az deployment sub $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
             --template-file "networking/resource-groups.json" \
             --name "resource-groups" \
-            --parameters  @networking/networking.dev.parameters.json
+            --parameters  @networking/networking.dev.parameters.json \
+            --location=${{ env.DEFAULT_LOCATION }}
 
         azcliversion: latest
