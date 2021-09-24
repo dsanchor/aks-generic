@@ -62,6 +62,15 @@
         "hubsRg": {
             "value": "[resourceId('Microsoft.Network/resourceGroups', parameters('hubs-rg-name'))]",
             "type": "string"
+        },
+        "spokesRgName": {
+            "value": " [parameters('spokes-rg-name')]",
+            "type": "string"
+        },
+        "hubsRgName": {
+            "value": "[parameters('hubs-rg-name')]",
+            "type": "string"
         }
+    
     }
   }

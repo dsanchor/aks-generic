@@ -43,6 +43,8 @@ jobs:
 
           echo "::set-output name=spokes-rg::$(az deployment sub show -n resource-groups --query properties.outputs.spokesRg.value -o tsv)"
           echo "::set-output name=hubs-rg::$(az deployment sub show -n resource-groups --query properties.outputs.hubsRg.value -o tsv)"
+          echo "::set-output name=spokes-rg-name::$(az deployment sub show -n resource-groups --query properties.outputs.spokesRgName.value -o tsv)"
+          echo "::set-output name=hubs-rg-name::$(az deployment sub show -n resource-groups --query properties.outputs.hubsRgName.value -o tsv)"
 
 
         azcliversion: latest
@@ -54,7 +56,7 @@ jobs:
       with:
         inlineScript: |
 
-          az deployment group create --resource-group ${{ steps.create-net-rgs.outputs.hubs-rg }} \
+          az deployment group create --resource-group ${{ steps.create-net-rgs.outputs.hubs-rg-name }} \
               --template-file networking/hub-default.json --parameters location=${{ env.DEFAULT_LOCATION }}
 
         azcliversion: latest
