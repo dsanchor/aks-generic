@@ -16,7 +16,7 @@ env:
   DEFAULT_LOCATION: westeurope
         
 jobs:
-  deploy:
+  deploy-networking:
     name: Create resource groups
     runs-on: ubuntu-latest
     steps:
@@ -31,14 +31,30 @@ jobs:
 
     # Create resource groups for hubs and spokes networking resources
     - name: Azure CLI - Create Networking related RGs
+      id: create-net-rgs
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+          az deployment sub $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
+              --template-file "networking/resource-groups.json" \
+              --name "resource-groups" \
+              --parameters  "@networking/networking.parameters.dev.json" \
+              --location=${{ env.DEFAULT_LOCATION }}
+
+          echo "::set-output name=spokes-rg::$(az deployment sub show -n resource-groups --query properties.outputs.spokes-rg-name.value -o tsv)"
+          echo "::set-output name=hubs-rg::$(az deployment sub show -n resource-groups --query properties.outputs.spokes-rg-name.value -o tsv)"
+
+
+        azcliversion: latest
+
+    # Create Hub
+    - name: Azure CLI - Create Hub
       id: aks-cluster
       uses: Azure/cli@v1.0.0
       with:
         inlineScript: |
-         az deployment sub $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
-            --template-file "networking/resource-groups.json" \
-            --name "resource-groups" \
-            --parameters  "@networking/networking.parameters.dev.json" \
-            --location=${{ env.DEFAULT_LOCATION }}
+
+          az deployment group create --resource-group ${{ steps.create-net-rgs.outputs.hubs-rg }} \
+              --template-file networking/hub-default.json --parameters location=${{ env.DEFAULT_LOCATION }}
 
         azcliversion: latest
