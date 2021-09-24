@@ -1,19 +1,56 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "allowedValues": [
+                "australiaeast",
+                "canadacentral",
+                "centralus",
+                "eastus",
+                "eastus2",
+                "westus2",
+                "francecentral",
+                "germanywestcentral",
+                "northeurope",
+                "southafricanorth",
+                "southcentralus",
+                "uksouth",
+                "westeurope",
+                "japaneast",
+                "southeastasia"
+            ],
+            "metadata": {
+                "description": "Resource group location"
+            }
+        },
+        "hubs-rg-name": {
+            "type": "string",
+            "metadata": {
+                "description": "The networking hubs resource group."
+            }
+        },
+        "spokes-rg-name": {
+            "type": "string",
+            "metadata": {
+                "description": "The networking spokes resource group."
+            }
+        }
+    },
     "resources": [
         {
             "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2021-04-01",
             "name": "[parameters('hubs-rg-name')]",
-            "location": "[parameters('Location')]",
+            "location": "[parameters('location')]",
             "properties": {}
         },
         {
             "type": "Microsoft.Resources/resourceGroups",
             "apiVersion": "2021-04-01",
             "name": "[parameters('hubs-rg-name')]",
-            "location": "[parameters('Location')]",
+            "location": "[parameters('location')]",
             "properties": {}
         }
     ],
