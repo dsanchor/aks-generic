@@ -41,8 +41,8 @@ jobs:
               --parameters  "@networking/networking.parameters.dev.json" \
               --location=${{ env.DEFAULT_LOCATION }}
 
-          echo "::set-output name=spokes-rg::$(az deployment sub show -n resource-groups --query properties.outputs.spokes-rg-name.value -o tsv)"
-          echo "::set-output name=hubs-rg::$(az deployment sub show -n resource-groups --query properties.outputs.spokes-rg-name.value -o tsv)"
+          echo "::set-output name=spokes-rg::$(az deployment sub show -n resource-groups --query properties.outputs.spokesRg.value -o tsv)"
+          echo "::set-output name=hubs-rg::$(az deployment sub show -n resource-groups --query properties.outputs.hubsRg.value -o tsv)"
 
 
         azcliversion: latest

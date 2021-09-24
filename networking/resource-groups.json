@@ -55,11 +55,11 @@
         }
     ],
     "outputs": {
-        "spokes-rg": {
+        "spokesRg": {
             "value": "[resourceId('Microsoft.Network/resourceGroups', parameters('spokes-rg-name'))]",
             "type": "string"
         },
-        "hubs-rg": {
+        "hubsRg": {
             "value": "[resourceId('Microsoft.Network/resourceGroups', parameters('hubs-rg-name'))]",
             "type": "string"
         }
