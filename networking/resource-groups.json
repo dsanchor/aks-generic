@@ -56,11 +56,11 @@
     ],
     "outputs": {
         "spokes-rg": {
-            "value": "[resourceId('Microsoft.Network/resourceGroups', variables('spokes-rg-name'))]",
+            "value": "[resourceId('Microsoft.Network/resourceGroups', parameters('spokes-rg-name'))]",
             "type": "string"
         },
         "hubs-rg": {
-            "value": "[resourceId('Microsoft.Network/resourceGroups', variables('hubs-rg-name'))]",
+            "value": "[resourceId('Microsoft.Network/resourceGroups', parameters('hubs-rg-name'))]",
             "type": "string"
         }
     }
