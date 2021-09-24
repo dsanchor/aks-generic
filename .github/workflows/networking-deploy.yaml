@@ -30,7 +30,7 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     # Create resource groups for hubs and spokes networking resources
-    - name: Azure CLI - Deploy AKS cluster
+    - name: Azure CLI - Create Networking related RGs
       id: aks-cluster
       uses: Azure/cli@v1.0.0
       with:
