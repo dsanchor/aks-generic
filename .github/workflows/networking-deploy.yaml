@@ -36,5 +36,5 @@ jobs:
             --template-file "networking/resource-groups.json" \
             --name resource-groups" \
             --parameters  @networking/networking.dev.parameters.json
-
-        azcliversion: 2.27.1
+            
+        azcliversion: latest
