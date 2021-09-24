@@ -35,14 +35,10 @@ jobs:
       uses: Azure/cli@v1.0.0
       with:
         inlineScript: |
-         pushd networking
-
          az deployment sub $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
-            --template-file "resource-groups.json" \
+            --template-file "networking/resource-groups.json" \
             --name "resource-groups" \
-            --parameters  "@networking.parameters.dev.json" \
+            --parameters  "@networking/networking.parameters.dev.json" \
             --location=${{ env.DEFAULT_LOCATION }}
-
-         popd
 
         azcliversion: latest
