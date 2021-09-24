@@ -40,7 +40,7 @@ jobs:
          az deployment sub $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
             --template-file "resource-groups.json" \
             --name "resource-groups" \
-            --parameters  "@networking.dev.parameters.json" \
+            --parameters  "@networking.parameters.dev.json" \
             --location=${{ env.DEFAULT_LOCATION }}
 
          popd
