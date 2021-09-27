@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "0.0.0.3",
+    "parameters": {
+        "resourceGroupName": {
+            "type": "string"
+        },
+        "resourceGroupLocation": {
+            "type": "string",
+            "defaultValue": "westeurope"
+        }
+    },
+    "variables": {
+        "acrResourceGroupName": "[concat(parameters('resourceGroupName'),'-acr')]"
+    },
+    "resources": [
+        {
+            "name": "[parameters('resourceGroupName')]",
+            "location": "[parameters('resourceGroupLocation')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "tags": {
+                "displayName": "Resource Group for general purpose"
+            }
+        },
+        {
+            "name": "[variables('acrResourceGroupName')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "[parameters('resourceGroupLocation')]",
+            "tags": {
+                "displayName": "Container Registry Resource Group"
+            }
+        }
+    ],
+    "outputs": {
+        "acrResourceGroupName": {
+            "value": "[variables('acrResourceGroupName')]",
+            "type": "string"
+        }
+    }
+}

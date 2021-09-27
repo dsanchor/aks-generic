@@ -1,0 +1,60 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appGatewayControllerIdName": {
+           "type": "string"
+        },
+        "resourceGroupName": {
+            "type": "string"
+        },
+        "resourceGroupLocation": {
+            "type": "string",
+            "defaultValue": "westeurope"
+        }
+    },
+    "variables": {
+        "nestedIdDeploymentName": "[concat(deployment().name,'-identities')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[variables('nestedIdDeploymentName')]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "dependsOn": [
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                            "name": "[parameters('appGatewayControllerIdName')]",
+                            "apiVersion": "2015-08-31-preview",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "tags": {
+                                "displayName": "app gateway controller managed identity",
+                                "what": "rbac",
+                                "reason": "aad-pod-identity",
+                                "[parameters('environmentName')]": true
+                            }
+                        }
+                    ],
+                    "outputs": {
+                        "appGatewayControllerIdName": {
+                            "value": "[parameters('appGatewayControllerIdName')]",
+                            "type": "string"
+                        },
+                        "appGatewayControllerPrincipalResourceId": {
+                            "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',[parameters('appGatewayControllerIdName')]",
+                            "type": "string"
+                        }
+                   }
+                }
+            }
+        }
+    ]
+}

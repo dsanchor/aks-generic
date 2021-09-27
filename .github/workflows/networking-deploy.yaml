@@ -1,4 +1,4 @@
-name: Deploy hub components
+name: Deploy networking components
 
 on:
   push:
@@ -18,7 +18,7 @@ env:
         
 jobs:
   deploy-networking:
-    name: Create resource groups
+    name: Deploy networking
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -111,3 +111,4 @@ jobs:
               nodepoolSubnetResourceIds="['${{ steps.create-spoke.outputs.nodepoolSubnetResourceIds }}']"
 
         azcliversion: latest
+
