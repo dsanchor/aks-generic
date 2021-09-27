@@ -79,20 +79,4 @@ jobs:
               --template-file networking/spoke-default.json --parameters location=${{ env.DEFAULT_LOCATION }} \
               hubVnetResourceId=${{ steps.create-hub.outputs.hubVnetId }} clusterName=${{ env.DEFAULT_CLUSTER_NAME }}
 
-          echo "::set-output name=clusterVnetResourceId::$(az deployment group show \
-              --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} -n spoke-default \
-              --query properties.outputs.clusterVnetResourceId.value -o tsv)"
-          echo "::set-output name=nodepoolSubnetResourceIds::$(az deployment group show \
-              --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} -n spoke-default \
-              --query properties.outputs.nodepoolSubnetResourceIds.value -o tsv)"
-          echo "::set-output name=appGwPublicIpAddress::$(az deployment group show \
-              --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} -n spoke-default \
-              --query properties.outputs.appGwPublicIpAddress.value -o tsv)"
-          echo "::set-output name=clusterSubnetPrefix::$(az deployment group show \
-              --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} -n spoke-default \
-              --query properties.outputs.clusterSubnetPrefix.value -o tsv)"
-          echo "::set-output name=gatewaySubnetPrefix::$(az deployment group show \
-              --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} -n spoke-default \
-              --query properties.outputs.gatewaySubnetPrefix.value -o tsv)"
-
         azcliversion: latest
