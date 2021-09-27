@@ -38,7 +38,7 @@ jobs:
         inlineScript: |
           az deployment sub  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
              --name aks-prereqs-rgs --location ${{ env.DEFAULT_LOCATION }} --template-file aks/resource-groups.json \
-              --parameters  "@aks-prereq/resource-groups.parameters.dev.json" 
+              --parameters  "@aks/resource-groups.parameters.dev.json" 
 
           echo "::set-output name=acrResourceGroupName::$(az deployment sub show -n aks-prereqs-rgs --query properties.outputs.acrResourceGroupName.value -o tsv)"
 
@@ -51,8 +51,8 @@ jobs:
       with:
         inlineScript: |
           az deployment sub  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
-             --name aks-prereqs-identities --location ${{ env.DEFAULT_LOCATION }} --template-file aks/identities-prereqs.json \
-              --parameters  "@aks-prereq/identities.parameters.dev.json" 
+             --name aks-prereqs-identities --location ${{ env.DEFAULT_LOCATION }} --template-file aksgit ad/identities-prereqs.json \
+              --parameters  "@aks/identities.parameters.dev.json" 
 
           echo "::set-output name=appGatewayControllerIdName::$(az deployment sub show -n aks-prereqs-identities --query properties.outputs.appGatewayControllerIdName.value -o tsv)"
           echo "::set-output name=appGatewayControllerPrincipalResourceId::$(az deployment sub show -n aks-prereqs-identities --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv)"
