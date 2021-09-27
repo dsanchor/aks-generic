@@ -108,6 +108,6 @@ jobs:
           az deployment group $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
               --resource-group ${{ steps.create-net-rgs.outputs.hubs-rg-name }} \
               --template-file networking/hub-default-fw-updates-with-nodepools.json --parameters location=${{ env.DEFAULT_LOCATION }} \
-              nodepoolSubnetResourceIds="[${{ steps.create-spoke.outputs.nodepoolSubnetResourceIds }}]"
+              nodepoolSubnetResourceIds="['${{ steps.create-spoke.outputs.nodepoolSubnetResourceIds }}']"
 
         azcliversion: latest
