@@ -76,7 +76,7 @@ jobs:
           az deployment group $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
               --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} \
               --template-file networking/spoke-default.json --parameters location=${{ env.DEFAULT_LOCATION }} \
-              hubVnetResourceId=${{ steps.create-hub.outputs.hubVnetId }} clusterName="@networking/cluster-name.parameter.dev.json" \
+              hubVnetResourceId=${{ steps.create-hub.outputs.hubVnetId }} "@networking/cluster-name.parameter.dev.json" \
 
           echo "::set-output name=clusterVnetResourceId::$(az deployment group show \
               --resource-group ${{ steps.create-net-rgs.outputs.spokes-rg-name }} -n spoke-default \
