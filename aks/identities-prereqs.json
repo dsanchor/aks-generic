@@ -38,9 +38,7 @@
                             "tags": {
                                 "displayName": "app gateway controller managed identity",
                                 "what": "rbac",
-                                "reason": "aad-pod-identity",
-                                "[parameters('environmentName')]": true
-                            }
+                                "reason": "aad-pod-identity"                            }
                         }
                     ],
                     "outputs": {
