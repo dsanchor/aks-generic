@@ -64,7 +64,7 @@
             "type": "string"
         },
         "spokesRgName": {
-            "value": " [parameters('spokes-rg-name')]",
+            "value": "[parameters('spokes-rg-name')]",
             "type": "string"
         },
         "hubsRgName": {
