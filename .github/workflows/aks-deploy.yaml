@@ -92,6 +92,7 @@ jobs:
       uses: Azure/login@v1.1
       with:
         creds: ${{ secrets.K8S_RBAC_AZURE_CREDENTIALS }}
+        allow-no-subscriptions: true
 
     # Create admin group
     - name: Azure CLI - Create AKS cluster admin group
