@@ -124,12 +124,13 @@ jobs:
           CLUSTER_NAME=`cat global/cluster-name.parameter.dev.json | jq -r .parameters.clusterName.value`
           USER=$CLUSTER_NAME-admin
 
+          UPN=$USER@${{ secrets.K8S_ADMIN_TENANT_DOMAIN }}
+
           AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
-            --user-principal-name $USER@${{ secrets.K8S_ADMIN_TENANT_DOMAIN }} \
-            --password ${{ secrets.K8S_ADMIN_PASSWORD }} --query objectId -o tsv)
+            --user-principal-name $UPN --password ${{ secrets.K8S_ADMIN_PASSWORD }} --query objectId -o tsv)
 
           az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} --member-id $AKS_ADMIN_OBJECTID
 
-          echo "Admin user is: $USER@${K8S_RBAC_AAD_PROFILE_TENANT_DOMAIN_NAME}"
+          echo "Admin user is: $UPN"
 
         azcliversion: latest
