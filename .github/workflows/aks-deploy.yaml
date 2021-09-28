@@ -208,7 +208,7 @@ jobs:
             then
                     echo "User already exists in group, continue..."
             else
-              echo "$AKS_ADMIN_OBJECTID"
+              echo "$USER_TO_GROUP"
               exit 1
             fi
           fi            
