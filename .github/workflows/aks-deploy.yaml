@@ -104,8 +104,8 @@ jobs:
           CLUSTER_NAME=`cat global/cluster-name.parameter.dev.json | jq .parameters.clusterName.value`
           ADMIN_GROUP=$CLUSTER_NAME-cluster-admin
 
-          K8S_RBAC_AAD_PROFILE_ADMIN_GROUP_OBJECTID=$(az ad group create --display-name $ADMIN_GROUP \
-            --mail-nickname $ADMIN_GROUP@notexisting.com --query objectId -o tsv)
+          K8S_RBAC_AAD_PROFILE_ADMIN_GROUP_OBJECTID=$(az ad group create --display-name ${ADMIN_GROUP} \
+            --mail-nickname ${ADMIN_GROUP} --query objectId -o tsv)
           
           echo "::set-output name=k8sAdminGroupName::$ADMIN_GROUP"
           echo "::set-output name=k8sAdminGroupId::$K8S_RBAC_AAD_PROFILE_ADMIN_GROUP_OBJECTID"
