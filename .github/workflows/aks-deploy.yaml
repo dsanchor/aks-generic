@@ -27,6 +27,9 @@ jobs:
       appGatewayControllerIdName: ${{ steps.create-identities.outputs.appGatewayControllerIdName }}
       appGatewayControllerPrincipalResourceId: ${{ steps.create-identities.outputs.appGatewayControllerPrincipalResourceId }}
       ingressControllerPrincipalId: ${{ steps.create-identities.outputs.ingressControllerPrincipalId }}
+      acrId: ${{ steps.deploy-acr.outputs.acrId }}
+      acrName: ${{ steps.deploy-acr.outputs.acrName }}
+      appInsightsName:  ${{ steps.deploy-appinsights.outputs.appInsightsName }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -50,6 +53,40 @@ jobs:
           echo "::set-output name=acrResourceGroupName::$(az deployment sub show -n aks-prereqs-rgs --query properties.outputs.acrResourceGroupName.value -o tsv)"
           echo "::set-output name=resourceGroupName::$(az deployment sub show -n aks-prereqs-rgs --query properties.outputs.resourceGroupName.value -o tsv)"
 
+        azcliversion: latest
+
+    # Deploy ACR
+    - name: Azure CLI - Deploy ACR
+      id: deploy-acr
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          az deployment group $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
+            -f aks/acr.json -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
+             -p acrResourceGroupName=${{ steps.create-aks-rgs.outputs.acrResourceGroupName }}  \
+             "@aks/acr.parameters.dev.json" 
+
+          echo "::set-output name=acrId::$(az deployment group show -g \
+            ${{ steps.create-aks-rgs.outputs.resourceGroupName }} -n acr --query properties.outputs.acrId.value -o tsv)"
+          echo "::set-output name=acrName::$(az deployment group show -g \
+            ${{ steps.create-aks-rgs.outputs.resourceGroupName }} -n acr --query properties.outputs.acrName.value -o tsv)"
+
+        azcliversion: latest
+
+    # Deploy AppInsights
+    - name: Azure CLI - Deploy AppInsights
+      id: deploy-appinsights
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          az deployment group $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
+            -f aks/appinsights.json -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }}
+
+          echo "::set-output name=appInsightsName::$(az deployment group show -g \
+            ${{ steps.create-aks-rgs.outputs.resourceGroupName }} -n appinsights --query properties.outputs.appInsightsName.value -o tsv)"
+  
         azcliversion: latest
 
     # Create identities for AKS resources 
@@ -83,6 +120,7 @@ jobs:
     outputs:
       k8sAdminGroupName: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }}
       k8sAdminGroupId: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupId }}
+      k8sRbacAadProfileTenantId: ${{ steps.save-tenant-id.outputs.k8sRbacAadProfileTenantId }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -93,6 +131,21 @@ jobs:
       with:
         creds: ${{ secrets.K8S_RBAC_AZURE_CREDENTIALS }}
         allow-no-subscriptions: true
+
+    # Save tenant id
+    - name: Azure CLI - Save tenant id
+      id: save-tenant-id
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          K8S_RBAC_AAD_PROFILE_TENANTID=$(az account show --query tenantId --output tsv)
+          
+          echo "::set-output name=k8sRbacAadProfileTenantId::$K8S_RBAC_AAD_PROFILE_TENANTID"
+
+        azcliversion: latest
+
+
 
     # Create admin group
     - name: Azure CLI - Create AKS cluster admin group
@@ -132,5 +185,52 @@ jobs:
           az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} --member-id $AKS_ADMIN_OBJECTID
 
           echo "Admin user is: $UPN"
+
+        azcliversion: latest
+
+  deploy-aks:
+    name: Deploy AKS
+    needs: [deploy-aks-prereq, configure-admin-user]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Login into your Azure Subscription using your Azure credentials - make sure the credentials has write permissions for the specific resource group/subscription. The credentials should be stored in GitHub Secrets - (Go to Settings Tab ->Secrets)
+    - name: Azure Login
+      uses: Azure/login@v1.1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Create resources for AKS and related resources
+    - name: Azure CLI - Create AKS and tooling relateds
+      id: deploy-aks
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          RG=${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
+          SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq .parameters.spokes-rg-name.value`
+          TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
+
+          K8S_VERSION=$(az aks get-versions --location ${{ env.DEFAULT_LOCATION }} \
+            --query 'orchestrators[?!isPreview] | [-1].orchestratorVersion' --output tsv)
+
+          echo "Installing Kubernetes $K8S_VERSION"
+
+          az deployment group  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
+             --resource-group $RG --template-file aks/cluster-stamp.json \
+             --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
+             k8sRbacAadProfileAdminGroupObjectID=${{needs.configure-admin-user.outputs.k8sAdminGroupId}}   \
+             k8sRbacAadProfileTenantId=${{needs.configure-admin-user.outputs.k8sRbacAadProfileTenantId}} \
+             appGatewayListenerCertificate=${{ secrets.APP_GATEWAY_LISTENER_CERTIFICATE }} \
+             ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
+             ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
+             acrResourceGroupName=${{needs.deploy-aks-prereq.outputs.acrResourceGroupName}} \
+             acrName=${{needs.deploy-aks-prereq.outputs.acrName}} \
+             location=${{ env.DEFAULT_LOCATION }} \
+             kubernetesVersion=$K8S_VERSION \
+             apwBaseDomain=${{ secrets.APP_GATEWAY_BASE_DOMAIN }} \
+             "@global/cluster-name.parameter.dev.json"
 
         azcliversion: latest

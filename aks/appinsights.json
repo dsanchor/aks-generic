@@ -1,0 +1,31 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "0.0.0.3",
+    "variables": {
+        "appInsightsName": "[concat('ai-', uniqueString(resourceGroup().id))]"
+
+    },
+    "parameters": {
+    },
+    "resources": [
+        {
+            "name": "[variables('appInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02-preview",
+            "kind": "other",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "App Insights instance - Distributed Tracing"
+            },
+            "properties": {
+                "Application_Type": "other"
+            }
+        }
+    ],
+    "outputs": {
+        "appInsightsName": {
+            "value": "[variables('appInsightsName')]",
+            "type": "string"
+        }
+    }
+}
