@@ -190,8 +190,7 @@ jobs:
             if [[ $AKS_ADMIN_OBJECTID == *"userPrincipalName already exists"* ]]
             then
               echo "User already exists, continue..."
-              AKS_ADMIN_OBJECTID=$(az ad user list --upn $UPN \ 
-                --query [0].objectId -o tsv)
+              AKS_ADMIN_OBJECTID=$(az ad user list --upn $UPN --query [0].objectId -o tsv)
             else
               echo $AKS_ADMIN_OBJECTID
               exit 1
