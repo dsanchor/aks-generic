@@ -189,9 +189,9 @@ jobs:
           else
             if [[ $AKS_ADMIN_OBJECTID == *"userPrincipalName already exists"* ]]
             then
-                    echo "User already exists, continue..."
+              echo "User already exists, continue..."
             else
-              echo "$AKS_ADMIN_OBJECTID"
+              echo $AKS_ADMIN_OBJECTID
               exit 1
             fi
           fi
@@ -206,9 +206,9 @@ jobs:
           else
             if [[ $USER_TO_GROUP == *"One or more added object references already exist"* ]]
             then
-                    echo "User already exists in group, continue..."
+              echo "User already exists in group, continue..."
             else
-              echo "$USER_TO_GROUP"
+              echo $USER_TO_GROUP
               exit 1
             fi
           fi            
