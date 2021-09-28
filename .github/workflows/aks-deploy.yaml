@@ -129,4 +129,6 @@ jobs:
 
           az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} --member-id $AKS_ADMIN_OBJECTID
 
+          echo "Admin user is: $USER@${K8S_RBAC_AAD_PROFILE_TENANT_DOMAIN_NAME}"
+
         azcliversion: latest
