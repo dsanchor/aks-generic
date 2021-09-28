@@ -196,7 +196,22 @@ jobs:
             fi
           fi
 
-          az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} --member-id $AKS_ADMIN_OBJECTID
+          USER_TO_GROUP=$(az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} \
+            --member-id $AKS_ADMIN_OBJECTID 2>&1)
+          # check if user was already in group
+          status=$?
+          if [[ $status -eq 0 ]]
+          then
+            echo "User added to group"
+          else
+            if [[ $USER_TO_GROUP == *"One or more added object references already exist"* ]]
+            then
+                    echo "User already exists in group, continue..."
+            else
+              echo "$AKS_ADMIN_OBJECTID"
+              exit 1
+            fi
+          fi            
 
           echo "Admin user is: $UPN"
 
