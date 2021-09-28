@@ -4,22 +4,29 @@ on:
   push:
     paths:
       - 'aks/*'
+      - 'global/*'
       - '.github/workflows/aks-deploy.yaml'
     branches: [ main ]
   pull_request:
     paths:
       - 'aks/*'
+      - 'global/*'
       - '.github/workflows/aks-deploy.yaml'
     branches: [ main ]
 
 env:
   DEFAULT_LOCATION: westeurope
-  DEFAULT_CLUSTER_NAME: dev
         
 jobs:
   deploy-aks-prereq:
     name: Deploy AKS prereq
     runs-on: ubuntu-latest
+    outputs:
+      resourceGroupName: ${{ steps.create-aks-rgs.outputs.resourceGroupName }}
+      acrResourceGroupName: ${{ steps.create-aks-rgs.outputs.acrResourceGroupName }}
+      appGatewayControllerIdName: ${{ steps.create-identities.outputs.appGatewayControllerIdName }}
+      appGatewayControllerPrincipalResourceId: ${{ steps.create-identities.outputs.appGatewayControllerPrincipalResourceId }}
+      ingressControllerPrincipalId: ${{ steps.create-identities.outputs.ingressControllerPrincipalId }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -41,6 +48,7 @@ jobs:
               --parameters  "@aks/resource-groups.parameters.dev.json" 
 
           echo "::set-output name=acrResourceGroupName::$(az deployment sub show -n aks-prereqs-rgs --query properties.outputs.acrResourceGroupName.value -o tsv)"
+          echo "::set-output name=resourceGroupName::$(az deployment sub show -n aks-prereqs-rgs --query properties.outputs.resourceGroupName.value -o tsv)"
 
         azcliversion: latest
 
@@ -52,9 +60,73 @@ jobs:
         inlineScript: |
           az deployment sub  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
              --name aks-prereqs-identities --location ${{ env.DEFAULT_LOCATION }} --template-file aks/identities-prereqs.json \
-              --parameters  "@aks/identities.parameters.dev.json" 
+             --parameters  "@aks/identities.parameters.dev.json"   "@aks/resource-groups.parameters.dev.json"
 
-          echo "::set-output name=appGatewayControllerIdName::$(az deployment sub show -n aks-prereqs-identities --query properties.outputs.appGatewayControllerIdName.value -o tsv)"
-          echo "::set-output name=appGatewayControllerPrincipalResourceId::$(az deployment sub show -n aks-prereqs-identities --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv)"
+
+          APPGW_CONTROLLER_ID_NAME=`az deployment group show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
+            -n aks-prereqs-identities-identities --query properties.outputs.appGatewayControllerIdName.value -o tsv`
+
+          CLUSTER_NAME=`cat global/cluster-name.parameter.dev.json | jq -r .parameters.clusterName.value`
+
+          echo "::set-output name=appGatewayControllerIdName::$APPGW_CONTROLLER_ID_NAME"
+          echo "::set-output name=appGatewayControllerPrincipalResourceId::$(az deployment group show -g \
+            ${{ steps.create-aks-rgs.outputs.resourceGroupName }} -n aks-prereqs-identities-identities \
+            --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv)"
+          echo "::set-output name=ingressControllerPrincipalId::$(az identity show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
+            -n $APPGW_CONTROLLER_ID_NAME --query principalId -o tsv)"
+
+        azcliversion: latest
+
+  configure-admin-user:
+    name: Configure admin user
+    runs-on: ubuntu-latest
+    outputs:
+      k8sAdminGroupName: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }}
+      k8sAdminGroupId: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupId }}
+     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Login into your Azure Subscription using credentials that can manage the AAD tenant
+    - name: Azure Login
+      uses: Azure/login@v1.1
+      with:
+        creds: ${{ secrets.K8S_RBAC_AZURE_CREDENTIALS }}
+
+    # Create admin group
+    - name: Azure CLI - Create AKS cluster admin group
+      id: create-aks-admin-group
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          CLUSTER_NAME=`cat global/cluster-name.parameters.dev.json | jq .parameters.clusterName.value`
+          ADMIN_GROUP=$CLUSTER_NAME-cluster-admin
+
+          K8S_RBAC_AAD_PROFILE_ADMIN_GROUP_OBJECTID=$(az ad group create --display-name $ADMIN_GROUP --mail-nickname $ADMIN_GROUP --query objectId -o tsv)
+          
+          echo "::set-output name=k8sAdminGroupName::$ADMIN_GROUP"
+          echo "::set-output name=k8sAdminGroupId::$K8S_RBAC_AAD_PROFILE_ADMIN_GROUP_OBJECTID"
+
+        azcliversion: latest
+
+    # Create admin user and add it to admin group
+    - name: Azure CLI - Create AKS cluster admin user
+      id: create-aks-admin-user
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          K8S_RBAC_AAD_PROFILE_TENANT_DOMAIN_NAME=$(az ad signed-in-user show \
+            --query 'userPrincipalName' -o tsv | cut -d '@' -f 2 | sed 's/\"//')
+
+          CLUSTER_NAME=`cat global/cluster-name.parameters.dev.json | jq .parameters.clusterName.value`
+          USER=$CLUSTER_NAME-admin
+
+          AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
+            --user-principal-name $USER@${K8S_RBAC_AAD_PROFILE_TENANT_DOMAIN_NAME} \
+            --password ${{ secrets.K8S_ADMIN_PASSWORD }} --query objectId -o tsv)
+
+          az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} --member-id $AKS_ADMIN_OBJECTID
 
         azcliversion: latest

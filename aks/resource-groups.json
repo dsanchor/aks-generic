@@ -37,6 +37,10 @@
         "acrResourceGroupName": {
             "value": "[variables('acrResourceGroupName')]",
             "type": "string"
-        }
+        },
+        "resourceGroupName": {
+            "value": "[parameters('resourceGroupName')]",
+            "type": "string"
+        }       
     }
 }

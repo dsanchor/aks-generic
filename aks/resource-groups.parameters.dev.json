@@ -4,6 +4,9 @@
   "parameters": {
     "resourceGroupName": {
       "value": "rg-aks-dev"
+    },
+    "resourceGroupLocation": {
+      "value": "westeurope"
     }
   }
 }
