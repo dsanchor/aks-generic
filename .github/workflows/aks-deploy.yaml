@@ -83,7 +83,7 @@ jobs:
     outputs:
       k8sAdminGroupName: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }}
       k8sAdminGroupId: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupId }}
-     steps:
+    steps:
     - name: Checkout
       uses: actions/checkout@v2
 
