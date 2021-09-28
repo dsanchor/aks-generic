@@ -178,7 +178,43 @@ jobs:
           USER=$CLUSTER_NAME-admin
 
           UPN=$USER@${{ secrets.K8S_ADMIN_TENANT_DOMAIN }}
+          PASSWORD=${{ secrets.K8S_ADMIN_PASSWORD }}
+          
+          AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
+            --user-principal-name $UPN --password $PASSWORD --query objectId -o tsv 2>&1)
 
+          # check if user was already created
+          status=$?
+          if [[ $status -eq 0 ]]
+          then
+            echo "User created"
+          else
+            if [[ $AKS_ADMIN_OBJECTID == *"userPrincipalName already exists"* ]]
+            then
+              echo "User already exists, continue..."
+              AKS_ADMIN_OBJECTID=$(az ad user list --upn $UPN --query [0].objectId -o tsv)
+            else
+              echo $AKS_ADMIN_OBJECTID
+              exit 1
+            fi
+          fi       
+          
+          USER_TO_GROUP=$(az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} \
+            --member-id $AKS_ADMIN_OBJECTID 2>&1)
+          # check if user was already in group
+          status=$?
+          if [[ $status -eq 0 ]]
+          then
+            echo "User added to group"
+          else
+            if [[ $USER_TO_GROUP == *"One or more added object references already exist"* ]]
+            then
+              echo "User already exists in group, continue..."
+            else
+              echo $USER_TO_GROUP
+              exit 1
+            fi
+          fi   
 
           echo "Admin user is: $UPN"
 
@@ -199,14 +235,14 @@ jobs:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     # Create resources for AKS and related resources
-    - name: Azure CLI - Create AKS and tooling relateds
+    - name: Azure CLI - Deploy AKS 
       id: deploy-aks
       uses: Azure/cli@v1.0.0
       with:
         inlineScript: |
 
           RG=${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
-          SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq .parameters.spokes-rg-name.value`
+          SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r .parameters.spokes-rg-name.value`
           TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
 
           K8S_VERSION=$(az aks get-versions --location ${{ env.DEFAULT_LOCATION }} \
