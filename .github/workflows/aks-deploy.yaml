@@ -180,7 +180,21 @@ jobs:
           UPN=$USER@${{ secrets.K8S_ADMIN_TENANT_DOMAIN }}
 
           AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
-            --user-principal-name $UPN --password ${{ secrets.K8S_ADMIN_PASSWORD }} --query objectId -o tsv)
+            --user-principal-name $UPN --password ${{ secrets.K8S_ADMIN_PASSWORD }} --query objectId -o tsv 2>&1)
+          # check if user was already created
+          status=$?
+          if [[ $status -eq 0 ]]
+          then
+            echo "User created"
+          else
+            if [[ $AKS_ADMIN_OBJECTID == *"userPrincipalName already exists"* ]]
+            then
+                    echo "User already exists, continue..."
+            else
+              echo "$AKS_ADMIN_OBJECTID"
+              exit 1
+            fi
+          fi
 
           az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} --member-id $AKS_ADMIN_OBJECTID
 
