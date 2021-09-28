@@ -101,7 +101,7 @@ jobs:
       with:
         inlineScript: |
 
-          CLUSTER_NAME=`cat global/cluster-name.parameters.dev.json | jq .parameters.clusterName.value`
+          CLUSTER_NAME=`cat global/cluster-name.parameter.dev.json | jq .parameters.clusterName.value`
           ADMIN_GROUP=$CLUSTER_NAME-cluster-admin
 
           K8S_RBAC_AAD_PROFILE_ADMIN_GROUP_OBJECTID=$(az ad group create --display-name $ADMIN_GROUP --mail-nickname $ADMIN_GROUP --query objectId -o tsv)
@@ -121,7 +121,7 @@ jobs:
           K8S_RBAC_AAD_PROFILE_TENANT_DOMAIN_NAME=$(az ad signed-in-user show \
             --query 'userPrincipalName' -o tsv | cut -d '@' -f 2 | sed 's/\"//')
 
-          CLUSTER_NAME=`cat global/cluster-name.parameters.dev.json | jq .parameters.clusterName.value`
+          CLUSTER_NAME=`cat global/cluster-name.parameter.dev.json | jq .parameters.clusterName.value`
           USER=$CLUSTER_NAME-admin
 
           AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
