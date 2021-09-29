@@ -2,6 +2,12 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "0.0.0.3",
     "parameters": {
+        "spokesRgName": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource group where all spokes resources are stored"
+            }
+        },
         "targetVnetResourceId": {
             "type": "string",
             "metadata": {
@@ -586,7 +592,7 @@
             "properties": {
                 "TTL": 3600,
                 "targetResource": {
-                    "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat('pip-', parameters('clusterName'), '-00'))]"
+                    "id": "[resourceId(parameters('spokesRgName'), 'Microsoft.Network/publicIPAddresses', concat('pip-', parameters('clusterName'), '-00'))]"
 
                 }
             }
