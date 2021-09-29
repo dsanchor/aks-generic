@@ -242,8 +242,7 @@ jobs:
         inlineScript: |
 
           RG=${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
-          #SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r .parameters.spokes-rg-name.value`
-          SPOKES_RG_NAME=rg-networking-spokes
+          SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
           TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
 
           K8S_VERSION=$(az aks get-versions --location ${{ env.DEFAULT_LOCATION }} \
