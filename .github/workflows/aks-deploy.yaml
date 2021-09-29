@@ -263,6 +263,7 @@ jobs:
              location=${{ env.DEFAULT_LOCATION }} \
              kubernetesVersion=$K8S_VERSION \
              apwBaseDomain=${{ secrets.APP_GATEWAY_BASE_DOMAIN }} \
+             spokesRgName=$SPOKES_RG_NAME \
              "@global/cluster-name.parameter.dev.json"
 
         azcliversion: latest
