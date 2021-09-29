@@ -575,7 +575,7 @@
                 },
                 "targetResource": {}
             }
-        }
+        },
         {
             "type": "Microsoft.Network/dnszones/A",
             "apiVersion": "2018-05-01",
