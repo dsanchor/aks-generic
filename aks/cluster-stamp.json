@@ -558,7 +558,7 @@
         {
             "type": "Microsoft.Network/dnszones/SOA",
             "apiVersion": "2018-05-01",
-            "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain')), '/@')]",
+            "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'), '/@')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/dnszones', concat(parameters('clusterName'),'.',parameters('apwBaseDomain')))]"
             ],
