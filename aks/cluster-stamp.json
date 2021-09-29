@@ -536,53 +536,6 @@
             }
         },
         {
-            "type": "Microsoft.Network/dnszones/NS",
-            "apiVersion": "2018-05-01",
-            "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'), '/@')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/dnszones', concat(parameters('clusterName'),'.',parameters('apwBaseDomain')))]"
-            ],
-            "properties": {
-                "TTL": 172800,
-                "NSRecords": [
-                    {
-                        "nsdname": "ns1-35.azure-dns.com."
-                    },
-                    {
-                        "nsdname": "ns2-35.azure-dns.net."
-                    },
-                    {
-                        "nsdname": "ns3-35.azure-dns.org."
-                    },
-                    {
-                        "nsdname": "ns4-35.azure-dns.info."
-                    }
-                ],
-                "targetResource": {}
-            }
-        },
-        {
-            "type": "Microsoft.Network/dnszones/SOA",
-            "apiVersion": "2018-05-01",
-            "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'), '/@')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/dnszones', concat(parameters('clusterName'),'.',parameters('apwBaseDomain')))]"
-            ],
-            "properties": {
-                "TTL": 3600,
-                "SOARecord": {
-                    "email": "azuredns-hostmaster.microsoft.com",
-                    "expireTime": 2419200,
-                    "host": "ns1-35.azure-dns.com.",
-                    "minimumTTL": 300,
-                    "refreshTime": 3600,
-                    "retryTime": 300,
-                    "serialNumber": 1
-                },
-                "targetResource": {}
-            }
-        },
-        {
             "type": "Microsoft.Network/dnszones/A",
             "apiVersion": "2018-05-01",
             "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'),'/*')]",
