@@ -563,14 +563,11 @@
                     {
                         "type": "Microsoft.Network/dnsZones/NS",
                         "name": "[concat(parameters('apwBaseDomain'), '/', parameters('clusterName'))]",
-                        "dependsOn": [
-                            "[concat('Microsoft.Network/dnsZones/', parameters('clusterName'),'.',parameters('apwBaseDomain'))]"
-                        ],
                         "apiVersion": "2018-05-01",
                         "properties": {
                             "TTL": 3600,
                             "NSRecords": "[reference(resourceId('Microsoft.Network/dnszones/NS', concat(parameters('clusterName'),'.', parameters('apwBaseDomain')), '@'), '2018-05-01').NSRecords]"
-                    }
+                        }
                     }
                 ]
             }
