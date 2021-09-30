@@ -302,3 +302,4 @@ jobs:
       with:
         manifests: |
           cluster-baseline-settings/flux.yaml
+        namespace: cluster-baseline-settings
