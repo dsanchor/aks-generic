@@ -282,7 +282,7 @@ jobs:
 
   deploy-flux:
     name: Deploy Flux
-    needs: [deploy-aks]
+    # needs: [deploy-aks]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
