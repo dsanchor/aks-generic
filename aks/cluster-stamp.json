@@ -562,7 +562,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Network/dnsZones/NS",
-                        "name": "[concat(parameters('apwBaseDomain'), '/', parameters('clusterName'))]",
+                        "name": "[concat(parameters('clusterName'), '.', parameters('apwBaseDomain'))]",
                         "apiVersion": "2018-05-01",
                         "properties": {
                             "TTL": 3600,
