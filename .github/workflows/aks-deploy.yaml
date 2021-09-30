@@ -23,13 +23,13 @@ jobs:
   deploy-aks-prereq:
     name: Deploy AKS prereq
     runs-on: ubuntu-latest
-    if: ${{ false }}
     outputs:
       resourceGroupName: ${{ steps.create-aks-rgs.outputs.resourceGroupName }}
       acrResourceGroupName: ${{ steps.create-aks-rgs.outputs.acrResourceGroupName }}
       appGatewayControllerIdName: ${{ steps.create-identities.outputs.appGatewayControllerIdName }}
       appGatewayControllerPrincipalResourceId: ${{ steps.create-identities.outputs.appGatewayControllerPrincipalResourceId }}
       ingressControllerPrincipalId: ${{ steps.create-identities.outputs.ingressControllerPrincipalId }}
+      ingressControllerClientId: ${{ steps.create-identities.outputs.ingressControllerClientId }}      
       acrId: ${{ steps.deploy-acr.outputs.acrId }}
       acrName: ${{ steps.deploy-acr.outputs.acrName }}
       appInsightsName:  ${{ steps.deploy-appinsights.outputs.appInsightsName }}
@@ -115,13 +115,14 @@ jobs:
             --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv)"
           echo "::set-output name=ingressControllerPrincipalId::$(az identity show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
             -n $APPGW_CONTROLLER_ID_NAME --query principalId -o tsv)"
+          echo "::set-output name=ingressControllerClientId::$(az identity show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
+            --ids ${{ steps.create-identities.outputs.appGatewayControllerPrincipalResourceId }} --query clientId -o tsv)"
 
         azcliversion: latest
 
   configure-admin-user:
     name: Configure admin user
     runs-on: ubuntu-latest
-    if: ${{ false }}
     outputs:
       k8sAdminGroupName: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }}
       k8sAdminGroupId: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupId }}
@@ -229,9 +230,9 @@ jobs:
     name: Deploy AKS
     needs: [deploy-aks-prereq, configure-admin-user]
     runs-on: ubuntu-latest
-    if: ${{ false }}
     outputs:
       aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
+      agwName:  ${{ steps.deploy-aks.outputs.agwName }}      
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -275,14 +276,15 @@ jobs:
              "@global/cluster-name.parameter.dev.json"
 
           echo "::set-output name=aksClusterName::$(az deployment group show -g $RG \
-                      -n cluster-stamp \
-                      --query properties.outputs.aksClusterName.value -o tsv)"
+            -n cluster-stamp --query properties.outputs.aksClusterName.value -o tsv)"
+          echo "::set-output name=agwName::$(az deployment group show -g $RG \
+            -n cluster-stamp --query properties.outputs.agwName.value -o tsv)"
 
         azcliversion: latest
 
   deploy-flux:
     name: Deploy Flux
-    # needs: [deploy-aks]
+    needs: [deploy-aks-prereq, deploy-aks]
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -292,10 +294,8 @@ jobs:
     - uses: azure/aks-set-context@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-        # cluster-name: ${{needs.deploy-aks.outputs.aksClusterName}}
-        cluster-name: aks-dev-776xfbx6rpees
-        # resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
-        resource-group: rg-aks-dev
+        cluster-name: ${{needs.deploy-aks.outputs.aksClusterName}}
+        resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
 
     # Create  cluster-baseline-settings ns in AKS
     - uses: azure/k8s-deploy@v1
@@ -309,3 +309,49 @@ jobs:
         manifests: |
           cluster-baseline-settings/flux.yaml
         namespace: cluster-baseline-settings
+
+  configure-agic:
+    runs-on: 'ubuntu-latest'
+    needs: [deploy-aks-prereq, deploy-aks, deploy-flux]
+    steps:
+    - uses: actions/checkout@v1
+
+    # Login into your Azure  to be able to get subscription id
+    - name: Azure Login
+      uses: Azure/login@v1.1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # Set the target Azure Kubernetes Service (AKS) cluster and init KUBECONFIG env var
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        cluster-name: ${{needs.deploy-aks.outputs.aksClusterName}}
+        resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
+
+    - name: 'Deploy'
+      uses: 'deliverybot/helm@v1'
+      with:
+        release: ingress-azure-${{needs.deploy-aks.outputs.aksClusterName}}
+        namespace: kube-system
+        chart: application-gateway-kubernetes-ingress/ingress-azure
+        version: 1.4.0
+        values: |
+          appgw.name: ${{ needs.deploy-aks.outputs.agwName }}
+          appgw.resourceGroup: ${{ needs.deploy-aks-prereq.outputs.resourceGroupName }} 
+          appgw.subscriptionId: $(az account show --query id --output tsv)
+          appgw.shared: false
+          kubernetes.watchNamespace: ""
+          armAuth.type: aadPodIdentity
+          armAuth.identityResourceID: ${{ needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId }} 
+          armAuth.identityClientID: ${{ needs.deploy-aks-prereq.outputs.ingressControllerClientId }} 
+          rbac.enabled: true
+          verbosityLevel: 3
+          aksClusterConfiguration.apiServerAddress: $(az aks show -n ${{needs.deploy-aks.outputs.aksClusterName}} -g ${{needs.deploy-aks-prereq.outputs.resourceGroupName}} --query fqdn -o tsv)
+          appgw.usePrivateIP: false
+
+        repo: https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+        repo-alias: application-gateway-kubernetes-ingress
+         
+      env:
+        KUBECONFIG: '${{ env.KUBECONFIG }}'       
