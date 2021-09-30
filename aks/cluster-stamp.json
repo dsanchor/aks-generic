@@ -551,7 +551,7 @@
             }
         },
         {
-            "name": "[concat('parent-dns', parameters('clusterName'))]",
+            "name": "[concat('child-dns-zone-', parameters('clusterName'))]",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2018-05-01",
             "properties": {
@@ -573,7 +573,7 @@
             }
         },
             "dependsOn": [
-                "[concat('Microsoft.Network/dnsZones/', parameters('clusterName'),'.',parameters('apwBaseDomain'))]"
+                "[resourceId(concat('Microsoft.Network/dnsZones/', parameters('clusterName'),'.',parameters('apwBaseDomain')))]"
             ]
         },
         {
