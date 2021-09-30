@@ -526,6 +526,18 @@
                 ]
             }
         },
+/*         {
+            "type": "Microsoft.Network/dnszones/NS",
+            "apiVersion": "2018-05-01",
+            "name": "[concat(parameters('apwBaseDomain'),'/', parameters('clusterName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/dnszones', parameters('apwBaseDomain'))]"
+            ],
+            "location": "global",
+            "properties": {
+                "zoneType": "Public"
+            }
+        }, */
         {
             "type": "Microsoft.Network/dnszones",
             "apiVersion": "2018-05-01",
