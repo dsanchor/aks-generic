@@ -297,6 +297,12 @@ jobs:
         # resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
         resource-group: rg-aks-dev
 
+    # Create  cluster-baseline-settings ns in AKS
+    - uses: azure/k8s-deploy@v1
+      with:
+        manifests: |
+          cluster-baseline-settings/ns-cluster-baseline-settings.yaml
+
     # Deploy flux in AKS
     - uses: azure/k8s-deploy@v1
       with:
