@@ -538,7 +538,7 @@
                 "zoneType": "Public"
             }
         }, 
-        {
+/*         {
             "type": "Microsoft.Network/dnszones",
             "apiVersion": "2018-05-01",
             "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'))]",
@@ -549,7 +549,7 @@
             "properties": {
                 "zoneType": "Public"
             }
-        },
+        }, */
         {
             "type": "Microsoft.Network/dnszones/A",
             "apiVersion": "2018-05-01",
