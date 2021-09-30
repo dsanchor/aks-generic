@@ -301,4 +301,4 @@ jobs:
     - uses: azure/k8s-deploy@v1
       with:
         manifests: |
-          cluster-baseline-settings/flux.yml
+          cluster-baseline-settings/flux.yaml
