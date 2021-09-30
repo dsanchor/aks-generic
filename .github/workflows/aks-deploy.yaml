@@ -350,7 +350,7 @@ jobs:
         # harcoded to 1.4.0 
         INGRESS_VERSION=1.4.0
 
-        helm install ingress-azure-dev application-gateway-kubernetes-ingress/ingress-azure \
+        helm upgrade --install ingress-azure-dev application-gateway-kubernetes-ingress/ingress-azure \
           --namespace kube-system \
           --set appgw.name=${{ needs.deploy-aks.outputs.agwName }} \
           --set appgw.resourceGroup=${{ needs.deploy-aks-prereq.outputs.resourceGroupName }} \
