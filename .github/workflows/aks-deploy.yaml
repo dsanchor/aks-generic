@@ -109,14 +109,16 @@ jobs:
 
           CLUSTER_NAME=`cat global/cluster-name.parameter.dev.json | jq -r .parameters.clusterName.value`
 
+          APPGW_CONTROLLER_PRINCIPAL_RID=$(az deployment group show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
+            -n aks-prereqs-identities-identities \
+            --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv)
+
           echo "::set-output name=appGatewayControllerIdName::$APPGW_CONTROLLER_ID_NAME"
-          echo "::set-output name=appGatewayControllerPrincipalResourceId::$(az deployment group show -g \
-            ${{ steps.create-aks-rgs.outputs.resourceGroupName }} -n aks-prereqs-identities-identities \
-            --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv)"
+          echo "::set-output name=appGatewayControllerPrincipalResourceId::$APPGW_CONTROLLER_PRINCIPAL_RID"
           echo "::set-output name=ingressControllerPrincipalId::$(az identity show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
             -n $APPGW_CONTROLLER_ID_NAME --query principalId -o tsv)"
           echo "::set-output name=ingressControllerClientId::$(az identity show -g ${{ steps.create-aks-rgs.outputs.resourceGroupName }} \
-            --ids ${{ steps.create-identities.outputs.appGatewayControllerPrincipalResourceId }} --query clientId -o tsv)"
+            --ids $APPGW_CONTROLLER_PRINCIPAL_RID --query clientId -o tsv)"
 
         azcliversion: latest
 
