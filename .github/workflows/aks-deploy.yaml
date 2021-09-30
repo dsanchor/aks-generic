@@ -5,12 +5,14 @@ on:
     paths:
       - 'aks/*'
       - 'global/*'
+      - 'cluster-baseline-settings/flux.yml'
       - '.github/workflows/aks-deploy.yaml'
     branches: [ main ]
   pull_request:
     paths:
       - 'aks/*'
       - 'global/*'
+      - 'cluster-baseline-settings/flux.yml'
       - '.github/workflows/aks-deploy.yaml'
     branches: [ main ]
 
@@ -30,6 +32,7 @@ jobs:
       acrId: ${{ steps.deploy-acr.outputs.acrId }}
       acrName: ${{ steps.deploy-acr.outputs.acrName }}
       appInsightsName:  ${{ steps.deploy-appinsights.outputs.appInsightsName }}
+      aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -224,6 +227,8 @@ jobs:
     name: Deploy AKS
     needs: [deploy-aks-prereq, configure-admin-user]
     runs-on: ubuntu-latest
+    outputs:
+      aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -266,4 +271,31 @@ jobs:
              spokesRgName=$SPOKES_RG_NAME \
              "@global/cluster-name.parameter.dev.json"
 
+          echo "::set-output name=aksClusterName::$(az deployment group show -g $RG \
+                      -n cluster-stamp \
+                      --query properties.outputs.aksClusterName.value -o tsv)"
+
+             aksClusterName
+
         azcliversion: latest
+
+  deploy-flux:
+    name: Deploy Flux
+    needs: [deploy-aks]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Set the target Azure Kubernetes Service (AKS) cluster. 
+    - uses: azure/aks-set-context@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        cluster-name: ${{needs.deploy-aks.outputs.aksClusterName}}
+        resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
+
+    # Deploy flux in AKS
+    - uses: azure/k8s-deploy@v1
+      with:
+        manifests: |
+          cluster-baseline-settings/flux.yml
