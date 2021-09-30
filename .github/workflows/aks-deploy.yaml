@@ -358,7 +358,7 @@ jobs:
           --set appgw.shared=false \
           --set kubernetes.watchNamespace="" \
           --set armAuth.type=aadPodIdentity \
-          --set armAuth.identityResourceID=${{ needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId }} \
+          --set armAuth.identityResourceID=${{ needs.deploy-aks-prereq.outputs.appGatewayControllerPrincipalResourceId }} \
           --set armAuth.identityClientID=${{ needs.deploy-aks-prereq.outputs.ingressControllerClientId }} \
           --set rbac.enabled=true \
           --set verbosityLevel=3 \
