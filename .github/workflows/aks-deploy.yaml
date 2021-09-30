@@ -23,6 +23,7 @@ jobs:
   deploy-aks-prereq:
     name: Deploy AKS prereq
     runs-on: ubuntu-latest
+    if: ${{ false }}
     outputs:
       resourceGroupName: ${{ steps.create-aks-rgs.outputs.resourceGroupName }}
       acrResourceGroupName: ${{ steps.create-aks-rgs.outputs.acrResourceGroupName }}
@@ -120,6 +121,7 @@ jobs:
   configure-admin-user:
     name: Configure admin user
     runs-on: ubuntu-latest
+    if: ${{ false }}
     outputs:
       k8sAdminGroupName: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }}
       k8sAdminGroupId: ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupId }}
@@ -227,6 +229,7 @@ jobs:
     name: Deploy AKS
     needs: [deploy-aks-prereq, configure-admin-user]
     runs-on: ubuntu-latest
+    if: ${{ false }}
     outputs:
       aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
     steps:
@@ -289,8 +292,10 @@ jobs:
     - uses: azure/aks-set-context@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
-        cluster-name: ${{needs.deploy-aks.outputs.aksClusterName}}
-        resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
+        # cluster-name: ${{needs.deploy-aks.outputs.aksClusterName}}
+        cluster-name: aks-dev-776xfbx6rpees
+        # resource-group: ${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
+        resource-group: rg-aks-dev
 
     # Deploy flux in AKS
     - uses: azure/k8s-deploy@v1
