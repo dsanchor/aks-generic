@@ -62,7 +62,7 @@
                 "description": "the principal id for the ingress controller managed identity"
             },
             "type": "string"
-        },
+        }
     },
     "variables": {
         "agwName": "[concat( 'apw-', parameters('uniqueClusterName')) ]",
@@ -245,7 +245,7 @@
                 "principalId": "[parameters('ingressControllerPrincipalId')]",
                 "scope": "[variables('apwResourceId')]"
             }
-        },
+        }
     ],
     "outputs": {
         "agwName": {
