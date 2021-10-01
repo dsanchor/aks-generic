@@ -133,7 +133,7 @@
                     {
                         "name": "apw-frontend-ports",
                         "properties": {
-                            "port": 443
+                            "port": 80
                         }
                     }
                 ],
@@ -149,12 +149,6 @@
                 },
                 "enableHttp2": false,
                 "sslCertificates": [
-                    {
-                        "name": "appgw-ssl-certificate",
-                        "properties": {
-                            "keyVaultSecretId": "[concat(reference(variables('keyVaultName')).vaultUri,'secrets/sslcert')]"
-                        }
-                    }
                 ],
                 "probes": [],
                 "backendAddressPools": [
@@ -162,9 +156,6 @@
                         "name": "wildcard-apps-bap",
                         "properties": {
                             "backendAddresses": [
-                                {
-                                    "fqdn": "[concat('notused.', parameters('apwBaseDomain'))]"
-                                }
                             ]
                         }
                     }
@@ -183,7 +174,7 @@
                 ],
                 "httpListeners": [
                     {
-                        "name": "listener-https",
+                        "name": "listener-http",
                         "properties": {
                             "frontendIPConfiguration": {
                                 "id": "[concat(variables('apwResourceId'), '/frontendIPConfigurations/apw-frontend-ip-configuration')]"
@@ -191,14 +182,9 @@
                             "frontendPort": {
                                 "id": "[concat(variables('apwResourceId'), '/frontendPorts/apw-frontend-ports')]"
                             },
-                            "protocol": "Https",
-                            "sslCertificate": {
-                                "id": "[concat(variables('apwResourceId'), '/sslCertificates/', 'appgw-ssl-certificate')]"
-                            },
-                            "hostName":"[concat('notused.', parameters('apwBaseDomain'))]",
-                            "hostNames": [
-                            ],
-                            "requireServerNameIndication": true
+                            "protocol": "Http",
+                            "hostNames": [],
+                            "requireServerNameIndication": false
                         }
                     }
                 ],
@@ -208,7 +194,7 @@
                         "properties": {
                             "RuleType": "Basic",
                             "httpListener": {
-                                "id": "[concat(variables('apwResourceId'), '/httpListeners/listener-https')]"
+                                "id": "[concat(variables('apwResourceId'), '/httpListeners/listener-http')]"
                             },
                             "backendAddressPool": {
                                 "id": "[concat(variables('apwResourceId'), '/backendAddressPools/wildcard-apps-bap')]"
