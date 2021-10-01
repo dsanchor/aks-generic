@@ -1663,43 +1663,6 @@
                 "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('clusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
                 "principalType": "ServicePrincipal"
             }
-        },
-        {
-            "type": "Microsoft.Network/applicationGateways/providers/roleAssignments",
-            "name": "[concat(variables('agwName'), '/Microsoft.Authorization/', guid(concat(parameters('ingressControllerIdName'), 'appgateway'), resourceGroup().id, parameters('environmentName')))]",
-            "apiVersion": "2020-04-01-preview",
-            "dependsOn": [
-                "[variables('apwResourceId')]"
-            ],
-            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Contributor role permissions over the Azure Application Gateway service instance",
-            "tags": {
-                "displayName": "App gateway ingress controller RBAC Contributor",
-                "what": "agic-rbac-contributor-to-appgw",
-                "app": "appgateway-ingress-controller",
-                "environment": "[parameters('environmentName')]"
-            },
-            "properties": {
-                "roleDefinitionId": "[variables('contributorRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "scope": "[variables('apwResourceId')]"
-            }
-        },
-        {
-            "type": "Microsoft.Authorization/roleAssignments",
-            "name": "[guid(concat(parameters('ingressControllerIdName'), 'resourcegroup', parameters('environmentName')), resourceGroup().id)]",
-            "apiVersion": "2020-04-01-preview",
-            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Reader role permissions over the cluster resource group",
-            "tags": {
-                "displayName": "App gateway ingress controller RBAC Reader",
-                "what": "agic-rbac-reader-to-resourcegroup",
-                "app": "appgateway-ingress-controller",
-                "environment": "[parameters('environmentName')]"
-            },
-            "properties": {
-                "roleDefinitionId": "[variables('readerRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "scope": "[resourceGroup().id]"
-            }
         }
     ],
     "outputs": {

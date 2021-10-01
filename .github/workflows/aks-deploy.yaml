@@ -352,10 +352,23 @@ jobs:
           SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
           TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
 
+          APP_GW=$(az network application-gateway show -g $RG \
+            -n apw-aks-dev-776xfbx6rpees 2>&1)
+          # check if user was already created
+          status=$?
+          if [[ $status -eq 0 ]]
+          then
+            echo "User created"
+          else
+
+          az network application-gateway show -g rg-aks-dev -n apw-aks-dev-776xfbx6rpees
+
           az deployment group  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
              --resource-group $RG --template-file aks/application-gateway.json \
              --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
              location=${{ env.DEFAULT_LOCATION }} \
+             ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
+             ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
              "@global/cluster-name.parameter.dev.json"
 
           echo "::set-output name=agwName::$(az deployment group show -g $RG \
