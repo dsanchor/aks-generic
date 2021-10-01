@@ -32,12 +32,6 @@
                 "description": "This is tennant where the ServerAppId, ServerAppSecret, ClientAppId all reside"
             }
         },
-        "appGatewayListenerCertificate": {
-            "type": "string",
-            "metadata": {
-                "description": "The certificate data for app gateway TLS termination. It is base64"
-            }
-        },
         "clusterAuthorizedIPRanges": {
             "type": "array",
             "defaultValue": [],
@@ -82,12 +76,6 @@
         "ingressControllerIdName": {
             "metadata": {
                 "description": "the name of the ingress controller managed identity"
-            },
-            "type": "string"
-        },
-        "ingressControllerPrincipalId": {
-            "metadata": {
-                "description": "the principal id for the ingress controller managed identity"
             },
             "type": "string"
         },
@@ -374,18 +362,6 @@
             }
         },
         {
-            "type": "Microsoft.KeyVault/vaults/secrets",
-            "apiVersion": "2019-09-01",
-            "name": "[concat( variables('keyVaultName') , '/sslcert')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName') )]"
-            ],
-            "properties": {
-                "value": "[parameters('appGatewayListenerCertificate')]",
-                "recoveryLevel": "Purgeable"
-            }
-        },
-        {
             "type": "Microsoft.Network/dnszones",
             "apiVersion": "2018-05-01",
             "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'))]",
@@ -458,18 +434,6 @@
                                 "roleDefinitionId": "[variables('networkContributorRole')]",
                                 "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('clusterName')), '2020-11-01', 'Full').identity.principalId]",
                                 "scope": "[parameters('targetVnetResourceId')]",
-                                "principalType": "ServicePrincipal"
-                            }
-                        },
-                        {
-                            "type": "Microsoft.Network/publicIpAddresses/providers/roleAssignments",
-                            "apiVersion": "2018-09-01-preview",
-                            "name": "[concat('pip-', parameters('clusterName'), '-00', '/Microsoft.Authorization/', guid(resourceGroup().id, variables('networkContributorRole'),'-agic-system-assigned-managed-identity-appw-public-ip'))]",
-                            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Network Contributor role permissions over the Application Gateway Public Ip",
-                            "properties": {
-                                "roleDefinitionId": "[variables('networkContributorRole')]",
-                                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                                "scope": "[resourceId(subscription().subscriptionId,variables('vNetResourceGroup'),'Microsoft.Network/publicIpAddresses', concat('pip-', parameters('clusterName'), '-00'))]",
                                 "principalType": "ServicePrincipal"
                             }
                         }
@@ -1464,36 +1428,6 @@
             "properties": {
                 "roleDefinitionId": "[variables('managedIdentityOperatorRole')]",
                 "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('clusterName')), '2020-11-01').identityProfile.kubeletidentity.objectId]",
-                "principalType": "ServicePrincipal"
-            }
-        },
-        {
-            "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-            "name": "[concat('appw-to-keyvault', '/Microsoft.Authorization/', guid(concat(resourceGroup().id, 'appw-to-keyvault'), variables('managedIdentityOperatorRole')))]",
-            "apiVersion": "2018-09-01-preview",
-            "comments": "Grant the AGIC with Manage Identity Operator role permissions over the application gateway manage identity",
-            "dependsOn": [
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'appw-to-keyvault')]"
-            ],
-            "properties": {
-                "roleDefinitionId": "[variables('managedIdentityOperatorRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "principalType": "ServicePrincipal"
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[concat(variables('keyVaultName'), '/Microsoft.Authorization/', guid(concat('aksic-to-keyvault',resourceGroup().id), variables('readerRole')))]",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'aksic-to-keyvault')]"
-            ],
-            "comments": "Grant the AKS cluster ingress controller with Reader role permissions over KeyVault containing TLS certs",
-            "properties": {
-                "roleDefinitionId": "[variables('readerRole')]",
-                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities','aksic-to-keyvault')).principalId]",
-                "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
                 "principalType": "ServicePrincipal"
             }
         },

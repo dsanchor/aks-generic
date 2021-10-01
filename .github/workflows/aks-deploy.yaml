@@ -266,9 +266,7 @@ jobs:
              --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
              k8sRbacAadProfileAdminGroupObjectID=${{needs.configure-admin-user.outputs.k8sAdminGroupId}}   \
              k8sRbacAadProfileTenantId=${{needs.configure-admin-user.outputs.k8sRbacAadProfileTenantId}} \
-             appGatewayListenerCertificate=${{ secrets.APP_GATEWAY_LISTENER_CERTIFICATE }} \
              ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
-             ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
              acrResourceGroupName=${{needs.deploy-aks-prereq.outputs.acrResourceGroupName}} \
              acrName=${{needs.deploy-aks-prereq.outputs.acrName}} \
              location=${{ env.DEFAULT_LOCATION }} \
@@ -365,7 +363,7 @@ jobs:
               --resource-group $RG --template-file aks/application-gateway.json \
               --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
               location=${{ env.DEFAULT_LOCATION }} \
-              uniqueClusterName=${{needs.deploy-aks.outputs.clusterName}} \
+              uniqueClusterName=${{needs.deploy-aks.outputs.aksClusterName}} \
               ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
               ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
               "@global/cluster-name.parameter.dev.json"
