@@ -536,6 +536,31 @@
             }
         },
         {
+            "name": "[concat('parent-dns-', parameters('clusterName'))]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "resources": [
+                    {
+                    "type": "Microsoft.Network/dnsZones/NS",
+                    "name": "[concat(parameters('apwBaseDomain'), '/', parameters('clusterName'))]",
+                    "apiVersion": "2018-05-01",
+                    "properties": {
+                        "TTL": 3600,
+                        "NSRecords": "[reference(resourceId('Microsoft.Network/dnszones/NS', concat(parameters('clusterName'),'.',parameters('apwBaseDomain')), '@'), '2018-05-01').NSRecords]"
+                    }
+                    }
+                ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/dnsZones/', parameters('apwBaseDomain'))]"
+            ]
+        },
+        {
             "type": "Microsoft.Network/dnszones/A",
             "apiVersion": "2018-05-01",
             "name": "[concat(parameters('clusterName'),'.',parameters('apwBaseDomain'),'/*')]",
@@ -549,32 +574,6 @@
 
                 }
             }
-        },
-        {
-            "name": "[concat('child-dns-zone-', parameters('clusterName'))]",
-            "type": "Microsoft.Resources/deployments",
-            "apiVersion": "2018-05-01",
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                "contentVersion": "1.0.0.0",
-                "resources": [
-                    {
-                        "type": "Microsoft.Network/dnsZones/NS",
-                        "name": "[concat(parameters('clusterName'), '.', parameters('apwBaseDomain'))]",
-                        "apiVersion": "2018-05-01",
-                        "properties": {
-                            "TTL": 3600,
-                            "NSRecords": "[reference(resourceId('Microsoft.Network/dnszones/NS', concat(parameters('clusterName'),'.', parameters('apwBaseDomain')), '@'), '2018-05-01').NSRecords]"
-                        }
-                    }
-                ]
-            }
-        },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/dnsZones/', concat(parameters('clusterName'),'.',parameters('apwBaseDomain')))]"
-            ]
         },
         {
             "type": "Microsoft.Network/applicationGateways/providers/diagnosticSettings",
