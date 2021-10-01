@@ -353,10 +353,8 @@ jobs:
           SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
           TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
 
-          az network application-gateway show -g rg-aks-dev -n apw-aks-dev-776xfbx6rpees
-
           APW=$(az network application-gateway show -g $RG \
-            -n apw-${{needs.deploy-aks.outputs.clusterName}} 2>&1)
+            -n apw-${{needs.deploy-aks.outputs.aksClusterName}} 2>&1)
           # check if user was already created
           status=$?
           if [[ $status -eq 0 ]]
