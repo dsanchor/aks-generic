@@ -56,14 +56,20 @@
             "allowedValues": [
                 "dev"
             ]
+        },
+        "uniqueClusterName": {
+            "type": "string",
+            "metadata": {
+                "description": "Unique cluster name"
+            }
         }
     },
     "variables": {
-        "agwName": "[concat( 'apw-', variables('clusterName')) ]",
-        "keyVaultName": "[concat( 'kv-', variables('clusterName'))]",
+        "agwName": "[concat( 'apw-', parameters('uniqueClusterName')) ]",
+        "keyVaultName": "[concat( 'kv-', parameters('uniqueClusterName'))]",
         "vNetResourceGroup": "[split(parameters('targetVnetResourceId'),'/')[4]]",
         "apwResourceId": "[resourceId('Microsoft.Network/applicationGateways', variables('agwName'))]",
-        "logAnalyticsWorkspaceName": "[concat('la-', variables('clusterName'))]",
+        "logAnalyticsWorkspaceName": "[concat('la-', parameters('uniqueClusterName'))]",
         "readerRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
         "contributorRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c')]"
     },

@@ -234,6 +234,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
+      agwName:  ${{ steps.deploy-aks.outputs.agwName }}    
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -279,6 +280,8 @@ jobs:
 
           echo "::set-output name=aksClusterName::$(az deployment group show -g $RG \
             -n cluster-stamp --query properties.outputs.aksClusterName.value -o tsv)"
+           echo "::set-output name=agwName::$(az deployment group show -g $RG \
+            -n cluster-stamp --query properties.outputs.agwName.value -o tsv)"
 
         azcliversion: latest
 
@@ -316,8 +319,6 @@ jobs:
   deploy-agic:
     name: Deploy App GW Ingress Controller
     runs-on: 'ubuntu-latest'
-    outputs:
-      agwName:  ${{ steps.deploy-agw.outputs.agwName }}    
     needs: [deploy-aks-prereq, deploy-aks, deploy-flux]
     steps:
     - name: Checkout
@@ -352,17 +353,25 @@ jobs:
           SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
           TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
 
-          az deployment group  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
-             --resource-group $RG --template-file aks/application-gateway.json \
-             --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
-             location=${{ env.DEFAULT_LOCATION }} \
-             uniqueClusterName=${{needs.deploy-aks.outputs.clusterName}} \
-             ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
-             ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
-             "@global/cluster-name.parameter.dev.json"
+          az network application-gateway show -g rg-aks-dev -n apw-aks-dev-776xfbx6rpees
 
-          echo "::set-output name=agwName::$(az deployment group show -g $RG \
-            -n application-gateway --query properties.outputs.agwName.value -o tsv)"
+          APW=$(az network application-gateway show -g $RG \
+            -n apw-${{needs.deploy-aks.outputs.clusterName}} 2>&1)
+          # check if user was already created
+          status=$?
+          if [[ $status -eq 0 ]]
+          then
+            echo "Application Gateway already exists.. and it wont be overwritten (To avoid losing exising configuration)"
+          else
+            az deployment group  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
+              --resource-group $RG --template-file aks/application-gateway.json \
+              --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
+              location=${{ env.DEFAULT_LOCATION }} \
+              uniqueClusterName=${{needs.deploy-aks.outputs.clusterName}} \
+              ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
+              ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
+              "@global/cluster-name.parameter.dev.json"
+          fi
 
         azcliversion: latest
 
@@ -377,7 +386,7 @@ jobs:
 
         helm upgrade --install ingress-azure-dev application-gateway-kubernetes-ingress/ingress-azure \
           --namespace kube-system \
-          --set appgw.name=${{ needs.deploy-agw.outputs.agwName }} \
+          --set appgw.name=${{ needs.deploy-aks.outputs.agwName }} \
           --set appgw.resourceGroup=${{ needs.deploy-aks-prereq.outputs.resourceGroupName }} \
           --set appgw.subscriptionId=$(az account show --query id --output tsv) \
           --set appgw.shared=false \
