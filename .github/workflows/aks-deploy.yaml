@@ -274,6 +274,7 @@ jobs:
              location=${{ env.DEFAULT_LOCATION }} \
              kubernetesVersion=$K8S_VERSION \
              apwBaseDomain=${{ secrets.APP_GATEWAY_BASE_DOMAIN }} \
+             apwBaseDomainRgName=${{ secrets.APP_GATEWAY_BASE_DOMAIN_RG }} \
              spokesRgName=$SPOKES_RG_NAME \
              "@global/cluster-name.parameter.dev.json"
 
