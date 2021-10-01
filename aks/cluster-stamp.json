@@ -460,15 +460,75 @@
                 },
                 "enableHttp2": false,
                 "sslCertificates": [
+                    {
+                        "name": "appgw-ssl-certificate",
+                        "properties": {
+                            "keyVaultSecretId": "[concat(reference(variables('keyVaultName')).vaultUri,'secrets/sslcert')]"
+                        }
+                    }
                 ],
                 "probes": [],
                 "backendAddressPools": [
+                    {
+                        "name": "wildcard-apps-bap",
+                        "properties": {
+                            "backendAddresses": [
+                                {
+                                    "fqdn": "[concat('notused.', parameters('apwBaseDomain'))]"
+                                }
+                            ]
+                        }
+                    }
                 ],
                 "backendHttpSettingsCollection": [
+                    {
+                        "name": "aks-ingress-apps-backendpool-httpsettings",
+                        "properties": {
+                            "port": 80,
+                            "protocol": "Http",
+                            "cookieBasedAffinity": "Disabled",
+                            "pickHostNameFromBackendAddress": true,
+                            "requestTimeout": 20
+                        }
+                    }
                 ],
                 "httpListeners": [
+                    {
+                        "name": "listener-https",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(variables('apwResourceId'), '/frontendIPConfigurations/apw-frontend-ip-configuration')]"
+                            },
+                            "frontendPort": {
+                                "id": "[concat(variables('apwResourceId'), '/frontendPorts/apw-frontend-ports')]"
+                            },
+                            "protocol": "Https",
+                            "sslCertificate": {
+                                "id": "[concat(variables('apwResourceId'), '/sslCertificates/', 'appgw-ssl-certificate')]"
+                            },
+                            "hostName":"[concat('notused.', parameters('apwBaseDomain'))]",
+                            "hostNames": [
+                            ],
+                            "requireServerNameIndication": true
+                        }
+                    }
                 ],
                 "requestRoutingRules": [
+                    {
+                        "Name": "apw-routing-rules",
+                        "properties": {
+                            "RuleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(variables('apwResourceId'), '/httpListeners/listener-https')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(variables('apwResourceId'), '/backendAddressPools/wildcard-apps-bap')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(variables('apwResourceId'), '/backendHttpSettingsCollection/aks-ingress-apps-backendpool-httpsettings')]"
+                             }
+                        }
+                    }
                 ]
             }
         },
