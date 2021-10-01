@@ -442,6 +442,18 @@
                                 "scope": "[parameters('targetVnetResourceId')]",
                                 "principalType": "ServicePrincipal"
                             }
+                        },
+                        {
+                            "type": "Microsoft.Network/publicIpAddresses/providers/roleAssignments",
+                            "apiVersion": "2018-09-01-preview",
+                            "name": "[concat('pip-', parameters('clusterName'), '-00', '/Microsoft.Authorization/', guid(resourceGroup().id, variables('networkContributorRole'),'-agic-system-assigned-managed-identity-appw-public-ip'))]",
+                            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Network Contributor role permissions over the Application Gateway Public Ip",
+                            "properties": {
+                                "roleDefinitionId": "[variables('networkContributorRole')]",
+                                "principalId": "[parameters('ingressControllerPrincipalId')]",
+                                "scope": "[resourceId(subscription().subscriptionId,variables('vNetResourceGroup'),'Microsoft.Network/publicIpAddresses', concat('pip-', parameters('clusterName'), '-00'))]",
+                                "principalType": "ServicePrincipal"
+                            }
                         }
                     ]
                 }
@@ -1452,18 +1464,6 @@
                 "roleDefinitionId": "[variables('readerRole')]",
                 "principalId": "[parameters('ingressControllerPrincipalId')]",
                 "scope": "[resourceGroup().id]"
-            }
-        },
-        {
-            "type": "Microsoft.Network/publicIpAddresses/providers/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[concat('pip-', parameters('clusterName'), '-00', '/Microsoft.Authorization/', guid(resourceGroup().id, variables('networkContributorRole'),'-agic-system-assigned-managed-identity-appw-public-ip'))]",
-            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Network Contributor role permissions over the Application Gateway Public Ip",
-            "properties": {
-                "roleDefinitionId": "[variables('networkContributorRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "scope": "[resourceId(subscription().subscriptionId,variables('vNetResourceGroup'),'Microsoft.Network/publicIpAddresses', concat('pip-', parameters('clusterName'), '-00'))]",
-                "principalType": "ServicePrincipal"
             }
         },
         {
