@@ -557,7 +557,7 @@
                 }
             },
             "dependsOn": [
-                "[resourceId('Microsoft.Network/dnsZones/', parameters('apwBaseDomain'))]"
+                "[resourceId('Microsoft.Network/dnsZones/', concat(parameters('clusterName'),'.',parameters('apwBaseDomain')))]"
             ]
         },
         {
