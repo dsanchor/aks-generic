@@ -234,7 +234,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
-      agwName:  ${{ steps.deploy-aks.outputs.agwName }}      
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -280,8 +279,6 @@ jobs:
 
           echo "::set-output name=aksClusterName::$(az deployment group show -g $RG \
             -n cluster-stamp --query properties.outputs.aksClusterName.value -o tsv)"
-          echo "::set-output name=agwName::$(az deployment group show -g $RG \
-            -n cluster-stamp --query properties.outputs.agwName.value -o tsv)"
 
         azcliversion: latest
 
@@ -316,9 +313,11 @@ jobs:
           cluster-baseline-settings/flux.yaml
         namespace: cluster-baseline-settings
 
-  configure-agic:
-    name: Configure App GW Ingress Controller
+  deploy-agic:
+    name: Deploy App GW Ingress Controller
     runs-on: 'ubuntu-latest'
+    outputs:
+      agwName:  ${{ steps.deploy-agw.outputs.agwName }}    
     needs: [deploy-aks-prereq, deploy-aks, deploy-flux]
     steps:
     - name: Checkout
@@ -341,6 +340,28 @@ jobs:
     - name: Setup helm
       uses: azure/setup-helm@v1
       id: install
+
+    # Create Application Gateway 
+    - name: Azure CLI - Deploy Application Gateway 
+      id: deploy-agw
+      uses: Azure/cli@v1.0.0
+      with:
+        inlineScript: |
+
+          RG=${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
+          SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
+          TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
+
+          az deployment group  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
+             --resource-group $RG --template-file aks/application-gateway.json \
+             --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
+             location=${{ env.DEFAULT_LOCATION }} \
+             "@global/cluster-name.parameter.dev.json"
+
+          echo "::set-output name=agwName::$(az deployment group show -g $RG \
+            -n application-gateway --query properties.outputs.agwName.value -o tsv)"
+
+        azcliversion: latest
 
     - name: Deploy AGIC in K8s
       shell: bash

@@ -1,0 +1,229 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "0.0.0.3",
+    "parameters": {
+        "clusterName": {
+            "type": "string",
+            "metadata": {
+                "description": "Cluster name suffix"
+            }
+        },
+        "location": {
+            "defaultValue": "eastus2",
+            "type": "string",
+            "allowedValues": [
+                "australiaeast",
+                "canadacentral",
+                "centralus",
+                "eastus",
+                "eastus2",
+                "westus2",
+                "francecentral",
+                "germanywestcentral",
+                "northeurope",
+                "southafricanorth",
+                "southcentralus",
+                "uksouth",
+                "westeurope",
+                "japaneast",
+                "southeastasia"
+            ],
+            "metadata": {
+                "description": "AKS Service, Node Pool, and supporting services (KeyVault, App Gateway, etc) region.  The network team maintains this approved regional list which is a subset of zones with Availability Zone support."
+            }
+        },
+        "targetVnetResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "The regional network spoke VNet Resource ID that the cluster will be joined to"
+            }
+        }
+    },
+    "variables": {
+        "agwName": "[concat( 'apw-', variables('clusterName')) ]",
+        "keyVaultName": "[concat( 'kv-', variables('clusterName'))]",
+        "vNetResourceGroup": "[split(parameters('targetVnetResourceId'),'/')[4]]",
+        "apwResourceId": "[resourceId('Microsoft.Network/applicationGateways', variables('agwName'))]",
+        "logAnalyticsWorkspaceName": "[concat('la-', variables('clusterName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/applicationGateways",
+            "apiVersion": "2020-07-01",
+            "name": "[variables('agwName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName') )]"
+            ],
+            "identity": {
+                "type": "UserAssigned",
+                "userAssignedIdentities": {
+                    "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities',  'appw-to-keyvault')]": {
+                    }
+                }
+            },
+            "zones": [
+                "1",
+                "2",
+                "3"
+            ],
+            "tags": {
+            },
+            "properties": {
+                "sku": {
+                    "name": "WAF_v2",
+                    "tier": "WAF_v2"
+                },
+                "sslPolicy": {
+                    "policyType": "Custom",
+                    "cipherSuites": [
+                        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+                    ],
+                    "minProtocolVersion": "TLSv1_2"
+                },
+                "gatewayIPConfigurations": [
+                    {
+                        "name": "apw-ip-configuration",
+                        "properties": {
+                            "subnet": {
+                                "id": "[concat(parameters('targetVnetResourceId'), '/subnets/snet-applicationgateways')]"
+                            }
+                        }
+                    }
+                ],
+                "frontendIPConfigurations": [
+                    {
+                        "name": "apw-frontend-ip-configuration",
+                        "properties": {
+                            "PublicIPAddress": {
+                                "id": "[resourceId(subscription().subscriptionId,variables('vNetResourceGroup'),'Microsoft.Network/publicIpAddresses',concat('pip-', parameters('clusterName'), '-00'))]"
+                            }
+                        }
+                    }
+                ],
+                "frontendPorts": [
+                    {
+                        "name": "apw-frontend-ports",
+                        "properties": {
+                            "port": 443
+                        }
+                    }
+                ],
+                "autoscaleConfiguration": {
+                    "minCapacity": "0",
+                    "maxCapacity": "10"
+                },
+                "webApplicationFirewallConfiguration": {
+                    "enabled": true,
+                    "firewallMode": "Prevention",
+                    "ruleSetType": "OWASP",
+                    "ruleSetVersion": "3.0"
+                },
+                "enableHttp2": false,
+                "sslCertificates": [
+                    {
+                        "name": "appgw-ssl-certificate",
+                        "properties": {
+                            "keyVaultSecretId": "[concat(reference(variables('keyVaultName')).vaultUri,'secrets/sslcert')]"
+                        }
+                    }
+                ],
+                "probes": [],
+                "backendAddressPools": [
+                    {
+                        "name": "wildcard-apps-bap",
+                        "properties": {
+                            "backendAddresses": [
+                                {
+                                    "fqdn": "[concat('notused.', parameters('apwBaseDomain'))]"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "backendHttpSettingsCollection": [
+                    {
+                        "name": "aks-ingress-apps-backendpool-httpsettings",
+                        "properties": {
+                            "port": 80,
+                            "protocol": "Http",
+                            "cookieBasedAffinity": "Disabled",
+                            "pickHostNameFromBackendAddress": true,
+                            "requestTimeout": 20
+                        }
+                    }
+                ],
+                "httpListeners": [
+                    {
+                        "name": "listener-https",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                "id": "[concat(variables('apwResourceId'), '/frontendIPConfigurations/apw-frontend-ip-configuration')]"
+                            },
+                            "frontendPort": {
+                                "id": "[concat(variables('apwResourceId'), '/frontendPorts/apw-frontend-ports')]"
+                            },
+                            "protocol": "Https",
+                            "sslCertificate": {
+                                "id": "[concat(variables('apwResourceId'), '/sslCertificates/', 'appgw-ssl-certificate')]"
+                            },
+                            "hostName":"[concat('notused.', parameters('apwBaseDomain'))]",
+                            "hostNames": [
+                            ],
+                            "requireServerNameIndication": true
+                        }
+                    }
+                ],
+                "requestRoutingRules": [
+                    {
+                        "Name": "apw-routing-rules",
+                        "properties": {
+                            "RuleType": "Basic",
+                            "httpListener": {
+                                "id": "[concat(variables('apwResourceId'), '/httpListeners/listener-https')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(variables('apwResourceId'), '/backendAddressPools/wildcard-apps-bap')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[concat(variables('apwResourceId'), '/backendHttpSettingsCollection/aks-ingress-apps-backendpool-httpsettings')]"
+                             }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/applicationGateways/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('agwName'), '/Microsoft.Insights/default')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/applicationGateways', variables('agwName'))]"
+            ],
+            "properties": {
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWorkspaceName'))]",
+                "logs": [
+                    {
+                        "category": "ApplicationGatewayAccessLog",
+                        "enabled": true
+                    },
+                    {
+                        "category": "ApplicationGatewayPerformanceLog",
+                        "enabled": true
+                    },
+                    {
+                        "category": "ApplicationGatewayFirewallLog",
+                        "enabled": true
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {
+        "agwName": {
+            "type": "string",
+            "value": "[variables('agwName')]"
+        }
+    }
+}
