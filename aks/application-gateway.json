@@ -38,25 +38,6 @@
                 "description": "The regional network spoke VNet Resource ID that the cluster will be joined to"
             }
         },
-        "ingressControllerIdName": {
-            "metadata": {
-                "description": "the name of the ingress controller managed identity"
-            },
-            "type": "string"
-        },
-        "ingressControllerPrincipalId": {
-            "metadata": {
-                "description": "the principal id for the ingress controller managed identity"
-            },
-            "type": "string"
-        },
-        "environmentName": {
-            "type": "string",
-            "defaultValue": "dev",
-            "allowedValues": [
-                "dev"
-            ]
-        },
         "uniqueClusterName": {
             "type": "string",
             "metadata": {
@@ -66,14 +47,9 @@
     },
     "variables": {
         "agwName": "[concat( 'apw-', parameters('uniqueClusterName')) ]",
-        "keyVaultName": "[concat( 'kv-', parameters('uniqueClusterName'))]",
         "vNetResourceGroup": "[split(parameters('targetVnetResourceId'),'/')[4]]",
         "apwResourceId": "[resourceId('Microsoft.Network/applicationGateways', variables('agwName'))]",
-        "logAnalyticsWorkspaceName": "[concat('la-', parameters('uniqueClusterName'))]",
-        "managedIdentityOperatorRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/f1a07417-d97a-45cb-824c-7a7467783830')]",
-        "networkContributorRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/4d97b98b-1d4f-4787-a291-c67834d212e7')]",
-        "readerRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
-        "contributorRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+        "logAnalyticsWorkspaceName": "[concat('la-', parameters('uniqueClusterName'))]"
     },
     "resources": [
         {
@@ -81,9 +57,6 @@
             "apiVersion": "2020-07-01",
             "name": "[variables('agwName')]",
             "location": "[parameters('location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName') )]"
-            ],
             "identity": {
                 "type": "UserAssigned",
                 "userAssignedIdentities": {
@@ -232,85 +205,6 @@
                         "enabled": true
                     }
                 ]
-            }
-        },
-        {
-            "type": "Microsoft.Network/applicationGateways/providers/roleAssignments",
-            "name": "[concat(variables('agwName'), '/Microsoft.Authorization/', guid(concat(parameters('ingressControllerIdName'), 'appgateway'), resourceGroup().id, parameters('environmentName')))]",
-            "apiVersion": "2020-04-01-preview",
-            "dependsOn": [
-                "[variables('apwResourceId')]"
-            ],
-            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Contributor role permissions over the Azure Application Gateway service instance",
-            "tags": {
-                "displayName": "App gateway ingress controller RBAC Contributor",
-                "what": "agic-rbac-contributor-to-appgw",
-                "app": "appgateway-ingress-controller",
-                "environment": "[parameters('environmentName')]"
-            },
-            "properties": {
-                "roleDefinitionId": "[variables('contributorRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "scope": "[variables('apwResourceId')]"
-            }
-        },
-        {
-            "type": "Microsoft.Authorization/roleAssignments",
-            "name": "[guid(concat(parameters('ingressControllerIdName'), 'resourcegroup', parameters('environmentName')), resourceGroup().id)]",
-            "apiVersion": "2020-04-01-preview",
-            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Reader role permissions over the cluster resource group",
-            "tags": {
-                "displayName": "App gateway ingress controller RBAC Reader",
-                "what": "agic-rbac-reader-to-resourcegroup",
-                "app": "appgateway-ingress-controller",
-                "environment": "[parameters('environmentName')]"
-            },
-            "properties": {
-                "roleDefinitionId": "[variables('readerRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "scope": "[resourceGroup().id]"
-            }
-        },
-        {
-            "type": "Microsoft.Network/publicIpAddresses/providers/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[concat('pip-', parameters('clusterName'), '-00', '/Microsoft.Authorization/', guid(resourceGroup().id, variables('networkContributorRole'),'-agic-system-assigned-managed-identity-appw-public-ip'))]",
-            "comments": "Grant the Azure App Gateway Ingress Controller manage identity with Network Contributor role permissions over the Application Gateway Public Ip",
-            "properties": {
-                "roleDefinitionId": "[variables('networkContributorRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "scope": "[resourceId(subscription().subscriptionId,variables('vNetResourceGroup'),'Microsoft.Network/publicIpAddresses', concat('pip-', parameters('clusterName'), '-00'))]",
-                "principalType": "ServicePrincipal"
-            }
-        },
-        {
-            "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-            "name": "[concat('appw-to-keyvault', '/Microsoft.Authorization/', guid(concat(resourceGroup().id, 'appw-to-keyvault'), variables('managedIdentityOperatorRole')))]",
-            "apiVersion": "2018-09-01-preview",
-            "comments": "Grant the AGIC with Manage Identity Operator role permissions over the application gateway manage identity",
-            "dependsOn": [
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'appw-to-keyvault')]"
-            ],
-            "properties": {
-                "roleDefinitionId": "[variables('managedIdentityOperatorRole')]",
-                "principalId": "[parameters('ingressControllerPrincipalId')]",
-                "principalType": "ServicePrincipal"
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-            "apiVersion": "2018-09-01-preview",
-            "name": "[concat(variables('keyVaultName'), '/Microsoft.Authorization/', guid(concat('aksic-to-keyvault',resourceGroup().id), variables('readerRole')))]",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'aksic-to-keyvault')]"
-            ],
-            "comments": "Grant the AKS cluster ingress controller with Reader role permissions over KeyVault containing TLS certs",
-            "properties": {
-                "roleDefinitionId": "[variables('readerRole')]",
-                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities','aksic-to-keyvault')).principalId]",
-                "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-                "principalType": "ServicePrincipal"
             }
         }
     ],

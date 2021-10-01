@@ -267,6 +267,7 @@ jobs:
              k8sRbacAadProfileAdminGroupObjectID=${{needs.configure-admin-user.outputs.k8sAdminGroupId}}   \
              k8sRbacAadProfileTenantId=${{needs.configure-admin-user.outputs.k8sRbacAadProfileTenantId}} \
              ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
+             ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
              acrResourceGroupName=${{needs.deploy-aks-prereq.outputs.acrResourceGroupName}} \
              acrName=${{needs.deploy-aks-prereq.outputs.acrName}} \
              location=${{ env.DEFAULT_LOCATION }} \
