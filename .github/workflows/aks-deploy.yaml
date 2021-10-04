@@ -360,8 +360,8 @@ jobs:
             echo "Application Gateway already exists.. and it wont be overwritten (To avoid losing exising configuration)"
           else
             az deployment group  $([[ ${{ github.event_name }} = pull_request ]] && echo what-if --no-pretty-print || echo create) \
-              --resource-group $RG --template-file aks/application-gateway.json \
-              --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
+              --resource-group rg-aks-dev --template-file aks/application-gateway.json \
+              --parameters targetVnetResourceId=/subscriptions/0a5000fc-339d-441d-8961-e8b9a72afa8b/resourceGroups/rg-networking-spokes/providers/Microsoft.Network/virtualNetworks/vnet-hub-spoke-dev \
               location=${{ env.DEFAULT_LOCATION }} \
               uniqueClusterName=${{needs.deploy-aks.outputs.aksClusterName}} \
               ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
