@@ -368,8 +368,6 @@ jobs:
               "@global/cluster-name.parameter.dev.json"
           fi
 
-        azcliversion: latest
-
     - name: Deploy AGIC in K8s
       shell: bash
       id: deploy-agw-controller
