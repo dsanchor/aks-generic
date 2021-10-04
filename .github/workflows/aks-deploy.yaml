@@ -343,9 +343,8 @@ jobs:
     # Create Application Gateway 
     - name: Azure CLI - Deploy Application Gateway 
       id: deploy-agw
-      uses: Azure/cli@v1.0.0
-      with:
-        inlineScript: |
+      shell: bash
+      run: |
 
           RG=${{needs.deploy-aks-prereq.outputs.resourceGroupName}}
           SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
@@ -373,6 +372,7 @@ jobs:
 
     - name: Deploy AGIC in K8s
       shell: bash
+      id: deploy-agw-controller
       run: |
 
         helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
