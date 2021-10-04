@@ -178,7 +178,6 @@ jobs:
     - name: Azure CLI - Create AKS cluster admin user
       id: create-aks-admin-user
       uses: Azure/cli@v1.0.0
-      if: ${{ false }}
       with:
         inlineScript: |
 
@@ -187,9 +186,13 @@ jobs:
 
           UPN=$USER@${{ secrets.K8S_ADMIN_TENANT_DOMAIN }}
           PASSWORD=${{ secrets.K8S_ADMIN_PASSWORD }}
-
+          # -e is set up by default, change if for this check
+          set +e
           AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
             --user-principal-name $UPN --password $PASSWORD --query objectId -o tsv 2>&1)
+          # back to default
+
+          set -e
           # check if user was already created
           status=$?
           if [[ $status -eq 0 ]]
@@ -206,8 +209,13 @@ jobs:
             fi
           fi       
 
+          # -e is set up by default, change if for this check
+          set +e
           USER_TO_GROUP=$(az ad group member add --group ${{ steps.create-aks-admin-group.outputs.k8sAdminGroupName }} \
             --member-id $AKS_ADMIN_OBJECTID 2>&1)
+          # back to default
+          set -e
+
           # check if user was already in group
           status=$?
           if [[ $status -eq 0 ]]
@@ -350,8 +358,12 @@ jobs:
           SPOKES_RG_NAME=`cat networking/networking.parameters.dev.json | jq -r '.parameters."spokes-rg-name"'.value`
           TARGET_VNET_RESOURCE_ID=$(az deployment group show -g $SPOKES_RG_NAME -n spoke-default --query properties.outputs.clusterVnetResourceId.value -o tsv)
 
+          # -e is set up by default, change if for this check
+          set +e
           APW=$(az network application-gateway show -g $RG \
             -n apw-${{needs.deploy-aks.outputs.aksClusterName}} 2>&1)
+          # back to default
+
           # check if user was already created
           status=$?
           if [[ $status -eq 0 ]]
