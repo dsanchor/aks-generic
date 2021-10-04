@@ -191,8 +191,8 @@ jobs:
           AKS_ADMIN_OBJECTID=$(az ad user create --display-name=$USER \
             --user-principal-name $UPN --password $PASSWORD --query objectId -o tsv 2>&1)
           # back to default
-
           set -e
+
           # check if user was already created
           status=$?
           if [[ $status -eq 0 ]]
@@ -363,6 +363,7 @@ jobs:
           APW=$(az network application-gateway show -g $RG \
             -n apw-${{needs.deploy-aks.outputs.aksClusterName}} 2>&1)
           # back to default
+          set -e
 
           # check if user was already created
           status=$?
