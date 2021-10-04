@@ -33,7 +33,6 @@ jobs:
       acrId: ${{ steps.deploy-acr.outputs.acrId }}
       acrName: ${{ steps.deploy-acr.outputs.acrName }}
       appInsightsName:  ${{ steps.deploy-appinsights.outputs.appInsightsName }}
-      aksClusterName:  ${{ steps.deploy-aks.outputs.aksClusterName }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -364,7 +363,7 @@ jobs:
               --resource-group $RG --template-file aks/application-gateway.json \
               --parameters targetVnetResourceId=$TARGET_VNET_RESOURCE_ID \
               location=${{ env.DEFAULT_LOCATION }} \
-              uniqueClusterName=${{needs.deploy-aks-prereq.outputs.aksClusterName}} \
+              uniqueClusterName=${{needs.deploy-aks.outputs.aksClusterName}} \
               ingressControllerIdName=${{needs.deploy-aks-prereq.outputs.appGatewayControllerIdName}} \
               ingressControllerPrincipalId=${{needs.deploy-aks-prereq.outputs.ingressControllerPrincipalId}} \
               "@global/cluster-name.parameter.dev.json"
@@ -393,6 +392,6 @@ jobs:
           --set armAuth.identityClientID=${{ needs.deploy-aks-prereq.outputs.ingressControllerClientId }} \
           --set rbac.enabled=true \
           --set verbosityLevel=3 \
-          --set aksClusterConfiguration.apiServerAddress=$(az aks show -n ${{needs.deploy-aks-prereq.outputs.aksClusterName}} -g ${{needs.deploy-aks-prereq.outputs.resourceGroupName}} --query fqdn -o tsv) \
+          --set aksClusterConfiguration.apiServerAddress=$(az aks show -n ${{needs.deploy-aks.outputs.aksClusterName}} -g ${{needs.deploy-aks-prereq.outputs.resourceGroupName}} --query fqdn -o tsv) \
           --set appgw.usePrivateIP=false \
           --version $INGRESS_VERSION
