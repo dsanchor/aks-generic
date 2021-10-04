@@ -68,7 +68,8 @@
         "agwName": "[concat( 'apw-', parameters('uniqueClusterName')) ]",
         "vNetResourceGroup": "[split(parameters('targetVnetResourceId'),'/')[4]]",
         "apwResourceId": "[resourceId('Microsoft.Network/applicationGateways', variables('agwName'))]",
-        "logAnalyticsWorkspaceName": "[concat('la-', parameters('uniqueClusterName'))]"
+        "logAnalyticsWorkspaceName": "[concat('la-', parameters('uniqueClusterName'))]",
+        "contributorRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c')]"
     },
     "resources": [
         {
