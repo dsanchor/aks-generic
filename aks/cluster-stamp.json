@@ -1481,6 +1481,10 @@
             "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
             "apiVersion": "2018-09-01-preview",
             "name": "[concat(variables('keyVaultName'), '/Microsoft.Authorization/', guid(concat('aksic-to-keyvault',resourceGroup().id), variables('readerRole')))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'aksic-to-keyvault')]"
+            ],
             "comments": "Grant the AKS cluster ingress controller with Reader role permissions over KeyVault containing TLS certs",
             "properties": {
                 "roleDefinitionId": "[variables('readerRole')]",
