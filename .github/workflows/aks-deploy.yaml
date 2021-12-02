@@ -1,6 +1,8 @@
 name: Deploy AKS
 
 on:
+  workflow_dispatch:
+  
   push:
     paths:
       - 'aks/*'
