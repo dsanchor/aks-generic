@@ -1471,6 +1471,9 @@
             "name": "[concat('appw-to-keyvault', '/Microsoft.Authorization/', guid(concat(resourceGroup().id, 'appw-to-keyvault'), variables('managedIdentityOperatorRole')))]",
             "apiVersion": "2018-09-01-preview",
             "comments": "Grant the AGIC with Manage Identity Operator role permissions over the application gateway manage identity",
+            "dependsOn": [
+                "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'appw-to-keyvault')]"
+            ],
             "properties": {
                 "roleDefinitionId": "[variables('managedIdentityOperatorRole')]",
                 "principalId": "[parameters('ingressControllerPrincipalId')]",
