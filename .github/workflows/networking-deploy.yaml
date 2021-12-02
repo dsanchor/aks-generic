@@ -1,6 +1,8 @@
 name: Deploy networking components
 
 on:
+  workflow_dispatch:
+ 
   push:
     paths:
       - 'networking/*'
