@@ -363,11 +363,11 @@ jobs:
           set +e
           APW=$(az network application-gateway show -g $RG \
             -n apw-${{needs.deploy-aks.outputs.aksClusterName}} 2>&1)
+          status=$?
           # back to default
           set -e
 
-          # check if user was already created
-          status=$?
+          # check if appgw was already created
           if [[ $status -eq 0 ]]
           then
             echo "Application Gateway already exists.. and it wont be overwritten (To avoid losing exising configuration)"
