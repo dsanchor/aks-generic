@@ -316,8 +316,8 @@
                                         }
                                     ],
                                     "targetFqdns": [
-                                        "*.hcp.eastus2.azmk8s.io",
-                                        "*.tun.eastus2.azmk8s.io"
+                                        "[concat('*.hcp.', parameters('location'), '.azmk8s.io')]",
+                                        "[concat('*.tun.', parameters('location'), '.azmk8s.io')]"
                                     ]
                                 },
                                 {
