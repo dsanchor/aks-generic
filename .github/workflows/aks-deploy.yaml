@@ -20,6 +20,7 @@ on:
 
 env:
   DEFAULT_LOCATION: westeurope
+  INGRESS_VERSION: 1.5.0
         
 jobs:
   deploy-aks-prereq:
@@ -391,8 +392,6 @@ jobs:
 
         helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
         helm repo update
-        # harcoded to 1.4.0 
-        INGRESS_VERSION=1.4.0
 
         helm upgrade --install ingress-azure-dev application-gateway-kubernetes-ingress/ingress-azure \
           --namespace kube-system \
@@ -408,4 +407,4 @@ jobs:
           --set verbosityLevel=3 \
           --set aksClusterConfiguration.apiServerAddress=$(az aks show -n ${{needs.deploy-aks.outputs.aksClusterName}} -g ${{needs.deploy-aks-prereq.outputs.resourceGroupName}} --query fqdn -o tsv) \
           --set appgw.usePrivateIP=false \
-          --version $INGRESS_VERSION
+          --version ${{ env.INGRESS_VERSION }}
